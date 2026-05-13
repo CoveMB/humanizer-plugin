@@ -1,0 +1,42 @@
+{
+  "name": "humanizer-plugin",
+  "version": "2.7.0",
+  "description": "Fact-safe Codex plugin for removing signs of AI-generated writing.",
+  "author": {
+    "name": "CoveMB",
+    "url": "https://github.com/CoveMB"
+  },
+  "homepage": "https://github.com/CoveMB/humanizer-plugin",
+  "repository": "https://github.com/CoveMB/humanizer-plugin",
+  "license": "MIT",
+  "keywords": [
+    "writing",
+    "editing",
+    "style",
+    "humanizer",
+    "codex",
+    "factual-integrity"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Humanizer Plugin",
+    "shortDescription": "Fact-safe AI-writing cleanup.",
+    "longDescription": "A Codex writing editor that identifies common AI-writing patterns and rewrites text to sound more natural while preserving meaning, voice, factual integrity, and quality through a private checklist and scoring gate.",
+    "developerName": "CoveMB",
+    "category": "Productivity",
+    "capabilities": [
+      "Write"
+    ],
+    "websiteURL": "https://github.com/CoveMB/humanizer-plugin",
+    "privacyPolicyURL": "https://github.com/CoveMB/humanizer-plugin/blob/main/README.md",
+    "termsOfServiceURL": "https://github.com/CoveMB/humanizer-plugin/blob/main/LICENSE",
+    "defaultPrompt": [
+      "Humanize this text:",
+      "Edit this to sound more natural.",
+      "Match my writing sample and rewrite this.",
+      "Audit and score this draft for AI-writing patterns."
+    ],
+    "screenshots": [],
+    "brandColor": "#475569"
+  }
+}
