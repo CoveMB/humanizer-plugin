@@ -1,0 +1,166 @@
+{
+  "cases": [
+    {
+      "id": "explicit_dense_rewrite",
+      "category": "explicit",
+      "should_trigger": true,
+      "prompt": "Use $humanizer to humanize this text. Return only the rewritten text.",
+      "source": "Great question! Here is an overview. AI coding assistants serve as an enduring testament to the transformative potential of large language models, marking a pivotal moment in the rapidly evolving landscape of software development. At its core, the value proposition is clear: streamlining documentation, enhancing tests, and fostering alignment. It is not just about autocomplete; it is about unlocking creativity at scale. Industry observers have noted adoption is rising. Let me know if you want more detail.",
+      "expected_trace_terms": [
+        "skills/humanizer/SKILL.md"
+      ],
+      "forbidden_stderr_terms": [
+        "path={repo_root}/.agents/plugins/marketplace.json plugin=\"humanizer-plugin\" error=invalid marketplace",
+        "plugin=\"humanizer@humanizer-local\""
+      ],
+      "output_contract_case_id": "dense_ai_rewrite"
+    },
+    {
+      "id": "explicit_missing_source",
+      "category": "explicit",
+      "should_trigger": true,
+      "prompt": "Use $humanizer. If a sentence needs missing facts to become specific, ask instead of inventing.",
+      "source": "Industry reports show that Atlas Note adoption increased by 43% last quarter, underscoring its crucial role in the productivity ecosystem.",
+      "expected_trace_terms": [
+        "skills/humanizer/SKILL.md"
+      ],
+      "forbidden_stderr_terms": [
+        "path={repo_root}/.agents/plugins/marketplace.json plugin=\"humanizer-plugin\" error=invalid marketplace",
+        "plugin=\"humanizer@humanizer-local\""
+      ],
+      "output_contract_case_id": "missing_source_handling"
+    },
+    {
+      "id": "explicit_audit_mode",
+      "category": "explicit",
+      "should_trigger": true,
+      "prompt": "Use $humanizer to audit and score this draft for AI-writing patterns. Put the rewrite first, then brief notes.",
+      "source": "The Momentum Flywheel is a groundbreaking framework that highlights how teams can unlock collaboration. The key takeaway is that alignment matters.",
+      "expected_trace_terms": [
+        "skills/humanizer/SKILL.md"
+      ],
+      "forbidden_stderr_terms": [
+        "path={repo_root}/.agents/plugins/marketplace.json plugin=\"humanizer-plugin\" error=invalid marketplace",
+        "plugin=\"humanizer@humanizer-local\""
+      ],
+      "output_contract_case_id": "audit_mode"
+    },
+    {
+      "id": "implicit_dense_rewrite",
+      "category": "implicit",
+      "should_trigger": true,
+      "prompt": "Rewrite this so it sounds natural and less AI-generated. Return only the rewritten text.",
+      "source": "Great question! Here is an overview. AI coding assistants serve as an enduring testament to the transformative potential of large language models, marking a pivotal moment in the rapidly evolving landscape of software development. At its core, the value proposition is clear: streamlining documentation, enhancing tests, and fostering alignment. It is not just about autocomplete; it is about unlocking creativity at scale. Industry observers have noted adoption is rising. Let me know if you want more detail.",
+      "expected_trace_terms": [
+        "skills/humanizer/SKILL.md"
+      ],
+      "forbidden_stderr_terms": [
+        "path={repo_root}/.agents/plugins/marketplace.json plugin=\"humanizer-plugin\" error=invalid marketplace",
+        "plugin=\"humanizer@humanizer-local\""
+      ],
+      "output_contract_case_id": "dense_ai_rewrite"
+    },
+    {
+      "id": "implicit_voice_calibration",
+      "category": "implicit",
+      "should_trigger": true,
+      "prompt": "Make this sound like my writing sample: I keep my notes short because I actually read them later. If a tool makes me babysit it, I stop using it. Draft:",
+      "source": "The ChronoPad release introduces a significantly enhanced offline mode, showcasing the team's commitment to seamless productivity. Users can now edit notes on flights and sync them when they reconnect.",
+      "expected_trace_terms": [
+        "skills/humanizer/SKILL.md"
+      ],
+      "forbidden_stderr_terms": [
+        "path={repo_root}/.agents/plugins/marketplace.json plugin=\"humanizer-plugin\" error=invalid marketplace",
+        "plugin=\"humanizer@humanizer-local\""
+      ],
+      "output_contract_case_id": "voice_calibration"
+    },
+    {
+      "id": "implicit_dense_banned_list",
+      "category": "implicit",
+      "should_trigger": true,
+      "prompt": "Clean up this dense AI-sounding draft. Return only the rewritten text.",
+      "source": "Certainly! In today's fast-paced landscape, NovaBuild leverages a robust, scalable, and innovative framework to streamline decision-making, foster cross-functional synergy, and move the needle. It's not just a dashboard, it's a paradigm shift. 🚀",
+      "expected_trace_terms": [
+        "skills/humanizer/SKILL.md"
+      ],
+      "forbidden_stderr_terms": [
+        "path={repo_root}/.agents/plugins/marketplace.json plugin=\"humanizer-plugin\" error=invalid marketplace",
+        "plugin=\"humanizer@humanizer-local\""
+      ],
+      "output_contract_case_id": "dense_banned_list_scrub"
+    },
+    {
+      "id": "contextual_release_notes",
+      "category": "contextual",
+      "should_trigger": true,
+      "prompt": "This release note sounds padded. Tighten it without adding facts.",
+      "source": "The update represents a pivotal step forward in the evolving landscape of team productivity, showcasing our commitment to delivering seamless collaboration. The release includes offline comments and faster issue search.",
+      "expected_trace_terms": [
+        "skills/humanizer/SKILL.md"
+      ],
+      "forbidden_stderr_terms": [
+        "path={repo_root}/.agents/plugins/marketplace.json plugin=\"humanizer-plugin\" error=invalid marketplace",
+        "plugin=\"humanizer@humanizer-local\""
+      ]
+    },
+    {
+      "id": "contextual_docs_cleanup",
+      "category": "contextual",
+      "should_trigger": true,
+      "prompt": "Edit this documentation paragraph so it reads like a person wrote it, but keep the technical meaning intact.",
+      "source": "This configuration serves as a robust foundation for enabling scalable workflows, ensuring developers can seamlessly leverage the platform to unlock productivity across cross-functional teams.",
+      "expected_trace_terms": [
+        "skills/humanizer/SKILL.md"
+      ],
+      "forbidden_stderr_terms": [
+        "path={repo_root}/.agents/plugins/marketplace.json plugin=\"humanizer-plugin\" error=invalid marketplace",
+        "plugin=\"humanizer@humanizer-local\""
+      ]
+    },
+    {
+      "id": "negative_fact_check_only",
+      "category": "negative",
+      "should_trigger": false,
+      "prompt": "Fact-check this claim and list what evidence would be needed. Do not rewrite it.",
+      "source": "Atlas Note adoption increased by 43% last quarter according to industry reports.",
+      "forbidden_trace_terms": [
+        "skills/humanizer/SKILL.md",
+        "Fact-Safe Anti-Slop Editor"
+      ]
+    },
+    {
+      "id": "negative_translate_only",
+      "category": "negative",
+      "should_trigger": false,
+      "prompt": "Translate this sentence into French. Do not edit the style.",
+      "source": "The product includes offline comments and faster issue search.",
+      "forbidden_trace_terms": [
+        "skills/humanizer/SKILL.md",
+        "Fact-Safe Anti-Slop Editor"
+      ]
+    },
+    {
+      "id": "negative_summary_only",
+      "category": "negative",
+      "should_trigger": false,
+      "prompt": "Summarize this into one bullet without rewriting the prose style.",
+      "source": "The release includes offline comments, faster issue search, and a redesigned notification settings page.",
+      "forbidden_trace_terms": [
+        "skills/humanizer/SKILL.md",
+        "Fact-Safe Anti-Slop Editor"
+      ]
+    },
+    {
+      "id": "negative_spellcheck_only",
+      "category": "negative",
+      "should_trigger": false,
+      "prompt": "Correct spelling mistakes only. Do not change tone, structure, or wording otherwise.",
+      "source": "The releese includes offline commments and faster issue serch.",
+      "forbidden_trace_terms": [
+        "skills/humanizer/SKILL.md",
+        "Fact-Safe Anti-Slop Editor"
+      ]
+    }
+  ]
+}
