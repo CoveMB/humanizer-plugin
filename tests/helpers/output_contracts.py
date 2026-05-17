@@ -56,7 +56,10 @@ def raise_if_violations(violations):
 
 
 def require_fragments(case_id, output, fragments):
-    missing_fragments = [fragment for fragment in fragments if fragment not in output]
+    lowered_output = output.lower()
+    missing_fragments = [
+        fragment for fragment in fragments if fragment.lower() not in lowered_output
+    ]
     raise_if_violations(
         f"{case_id}: missing required fragment {fragment!r}"
         for fragment in missing_fragments

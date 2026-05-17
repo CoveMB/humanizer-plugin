@@ -29,6 +29,12 @@ class OutputContractTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             validate_case_output(BASE_CASE, "Adoption rose last quarter.")
 
+    def test_required_fragments_are_case_insensitive(self):
+        validate_case_output(
+            {"id": "required", "constraints": {"must_include": ["Atlas Note"]}},
+            "atlas note adoption rose 43%. The source is unnamed, so the claim should stay general.",
+        )
+
     def test_rejects_forbidden_fragment(self):
         with self.assertRaises(AssertionError):
             validate_case_output(BASE_CASE, "Atlas Note rose 43%, according to Gartner.")

@@ -91,6 +91,8 @@ class SkillArtifactTests(unittest.TestCase):
             "editing or reviewing",
             "fact-safe checklist",
             "scoring gate",
+            "sounds padded",
+            "reads like a person wrote it",
         ]
         for required_trigger_term in required_trigger_terms:
             self.assertIn(required_trigger_term, description)
@@ -207,6 +209,10 @@ class SkillArtifactTests(unittest.TestCase):
     def test_ci_runs_deterministic_quality_gates(self):
         workflow = read_text(WORKFLOW_PATH)
         required_commands = [
+            "fetch-depth: 0",
+            "github.event_name",
+            "github.base_ref",
+            "github.event.before",
             "git diff --check",
             "make test",
             "make eval-humanizer-dry-run",

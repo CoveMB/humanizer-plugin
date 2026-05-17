@@ -34,6 +34,10 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
             for case in cases
             if case.get("output_contract_case_id")
         }
+        forced_read_case_ids = {
+            case["id"] for case in cases if case.get("force_skill_file_read")
+        }
+        positive_case_ids = {case["id"] for case in cases if case["should_trigger"]}
 
         self.assertGreaterEqual(len(cases), 10)
         self.assertTrue({"explicit", "implicit", "contextual", "negative"}.issubset(categories))
@@ -44,18 +48,27 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
                 "voice_calibration",
                 "audit_mode",
                 "dense_banned_list_scrub",
+                "contextual_release_notes",
+                "contextual_docs_cleanup",
             }.issubset(contract_ids)
         )
+        self.assertTrue(positive_case_ids)
+        self.assertTrue(forced_read_case_ids)
+        self.assertTrue(forced_read_case_ids.issubset(positive_case_ids))
 
-    def test_trigger_cases_reject_stale_humanizer_plugin_warnings(self):
+    def test_all_cases_reject_humanizer_plugin_loader_warnings(self):
         cases = self.runner.load_eval_cases(EVAL_CASES_PATH)
-        trigger_cases = [case for case in cases if case["should_trigger"]]
 
-        for case in trigger_cases:
+        for case in cases:
             with self.subTest(case=case["id"]):
+                forbidden_stderr_terms = case.get("forbidden_stderr_terms", [])
+                self.assertIn(
+                    'plugin="humanizer-plugin" error=invalid marketplace',
+                    forbidden_stderr_terms,
+                )
                 self.assertIn(
                     'plugin="humanizer@humanizer-local"',
-                    case.get("forbidden_stderr_terms", []),
+                    forbidden_stderr_terms,
                 )
 
     def test_load_eval_cases_rejects_duplicate_ids(self):
@@ -90,11 +103,36 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "duplicate"):
                 self.runner.load_eval_cases(cases_path)
 
+    def test_load_eval_cases_rejects_unknown_output_contract_case_id(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            cases_path = Path(temporary_directory) / "cases.json"
+            cases_path.write_text(
+                json.dumps(
+                    {
+                        "cases": [
+                            {
+                                "id": "unknown_contract",
+                                "category": "explicit",
+                                "should_trigger": True,
+                                "prompt": "Use Humanizer.",
+                                "source": "Here is a draft.",
+                                "output_contract_case_id": "missing_contract",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "unknown output contract"):
+                self.runner.load_eval_cases(cases_path)
+
     def test_build_codex_prompt_includes_source_and_output_rules(self):
         case = {
             "id": "sample",
             "category": "explicit",
             "should_trigger": True,
+            "force_skill_file_read": True,
             "prompt": "Use $humanizer to rewrite this.",
             "source": "Great question! This is a pivotal moment.",
             "output_contract_case_id": "dense_ai_rewrite",
@@ -107,6 +145,21 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
         self.assertIn("Great question! This is a pivotal moment.", prompt)
         self.assertIn("Return only the final Humanizer output", prompt)
         self.assertIn("Do not edit repository files", prompt)
+
+    def test_build_codex_prompt_supports_unforced_activation_probes(self):
+        case = {
+            "id": "activation",
+            "category": "contextual",
+            "should_trigger": True,
+            "force_skill_file_read": False,
+            "prompt": "This sounds padded. Tighten it.",
+            "source": "This release represents a pivotal step.",
+        }
+
+        prompt = self.runner.build_codex_prompt(case)
+
+        self.assertNotIn("Read `skills/humanizer/SKILL.md` before answering.", prompt)
+        self.assertIn("Return only the final Humanizer output", prompt)
 
     def test_build_codex_prompt_does_not_force_skill_for_no_trigger_cases(self):
         case = {
@@ -164,6 +217,21 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
                 case,
                 f'WARN path={REPO_ROOT}/.agents/plugins/marketplace.json '
                 'plugin="humanizer-plugin" error=invalid marketplace',
+            )
+
+    def test_check_stderr_expectations_fails_for_user_marketplace_warning(self):
+        case = {
+            "id": "stderr",
+            "forbidden_stderr_terms": [
+                'plugin="humanizer-plugin" error=invalid marketplace'
+            ],
+        }
+
+        with self.assertRaisesRegex(AssertionError, "forbidden stderr term"):
+            self.runner.check_stderr_expectations(
+                case,
+                'WARN path=/Users/example/.agents/plugins/marketplace.json '
+                'plugin="humanizer-plugin" error=invalid marketplace file',
             )
 
     def test_build_codex_command_uses_read_only_json_trace_and_output_file(self):

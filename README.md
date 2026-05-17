@@ -399,11 +399,11 @@ make eval-humanizer
 
 The live runner executes the prompts in `evals/humanizer_eval_cases.json` through `codex exec --json` in a read-only sandbox, writes JSONL traces and final outputs under `evals/artifacts/latest/`, checks trigger-related trace terms, and reuses the saved-output contracts for cases that map to `tests/fixtures/humanizer_contract_cases.json`.
 
-For reproducibility, the runner ignores user config and project rules, points Codex at this repository as `humanizer-plugin-local`, enables `humanizer-plugin@humanizer-plugin-local`, uses ephemeral sessions, and pins the default eval model to `gpt-5.5`. Positive live cases explicitly read `skills/humanizer/SKILL.md` so the trace proves the current skill file was used; negative controls do not force that read. Use `EVAL_ARGS='--model <model>'` to test another model, or `EVAL_ARGS='--timeout-seconds 600'` for slower environments.
+For reproducibility, the runner ignores user config and project rules, points Codex at this repository as `humanizer-plugin-local`, enables `humanizer-plugin@humanizer-plugin-local`, uses ephemeral sessions, and pins the default eval model to `gpt-5.5`. Current positive cases set `force_skill_file_read` so the trace proves the current `skills/humanizer/SKILL.md` file was used; cases can opt out of that behavior when testing an environment where Codex exposes the plugin skill directly. Use `EVAL_ARGS='--model <model>'` to test another model, or `EVAL_ARGS='--timeout-seconds 600'` for slower environments.
 
 ## Sources and credits
 
-Humanizer 2.7.0 is derived from and inspired by these sources:
+Humanizer 2.7.1 is derived from and inspired by these sources:
 
 - [humanizer](https://github.com/blader/humanizer) by blader, based on Wikipedia's "Signs of AI writing" guide.
 - [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing), maintained by WikiProject AI Cleanup.
@@ -414,6 +414,7 @@ See `NOTICE` for attribution and license details.
 
 ## Version history
 
+- **2.7.1**: Tightened Codex skill activation metadata for padded prose and "reads like a person wrote it" edit requests.
 - **2.7.0**: Added the fact-safe quality gate, including stop-slop-inspired mechanical checks, scoring thresholds, and Tagore-inspired substance scoring while keeping Humanizer's factual-integrity rules.
 - **2.6.0**: Ported stricter guardrails for factual integrity, fake naming, self-narration, rhetorical hooks, no-preamble output, and safer examples.
 - **2.5.1**: Added passive voice and subjectless fragments, raising the catalog to 29 patterns.

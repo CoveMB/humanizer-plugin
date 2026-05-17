@@ -187,6 +187,70 @@
         "no_markdown_fence": true,
         "rewrite_only": true
       }
+    },
+    {
+      "id": "contextual_release_notes",
+      "mode": "rewrite",
+      "tags": [
+        "rewrite_only_output",
+        "factual_integrity",
+        "no_em_dash",
+        "no_chatbot_wrapper",
+        "preserve_supplied_facts"
+      ],
+      "prompt": "This release note sounds padded. Tighten it without adding facts.",
+      "source": "The update represents a pivotal step forward in the evolving landscape of team productivity, showcasing our commitment to delivering seamless collaboration. The release includes offline comments and faster issue search.",
+      "constraints": {
+        "must_include": [
+          "offline comments",
+          "faster issue search"
+        ],
+        "must_not_include": [
+          "pivotal step",
+          "evolving landscape",
+          "showcasing",
+          "commitment",
+          "seamless collaboration"
+        ],
+        "no_em_dash": true,
+        "no_chatbot_wrapper": true,
+        "no_contrast_frame": true,
+        "no_markdown_fence": true,
+        "rewrite_only": true
+      }
+    },
+    {
+      "id": "contextual_docs_cleanup",
+      "mode": "rewrite",
+      "tags": [
+        "rewrite_only_output",
+        "factual_integrity",
+        "no_em_dash",
+        "no_chatbot_wrapper",
+        "preserve_supplied_facts"
+      ],
+      "prompt": "Edit this documentation paragraph so it reads like a person wrote it, but keep the technical meaning intact.",
+      "source": "This configuration serves as a robust foundation for enabling scalable workflows, ensuring developers can seamlessly leverage the platform to unlock productivity across cross-functional teams.",
+      "constraints": {
+        "must_include": [
+          "configuration",
+          "scalable workflows",
+          "platform"
+        ],
+        "must_not_include": [
+          "robust foundation",
+          "enabling",
+          "seamlessly",
+          "leverage",
+          "unlock productivity",
+          "cross-functional"
+        ],
+        "no_em_dash": true,
+        "no_chatbot_wrapper": true,
+        "no_contrast_frame": true,
+        "no_markdown_fence": true,
+        "rewrite_only": true
+      }
     }
   ]
 }

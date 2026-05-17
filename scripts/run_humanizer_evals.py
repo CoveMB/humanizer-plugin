@@ -22,6 +22,10 @@ LOCAL_MARKETPLACE_NAME = "humanizer-plugin-local"
 LOCAL_PLUGIN_NAME = "humanizer-plugin"
 VALID_CATEGORIES = {"explicit", "implicit", "contextual", "negative"}
 REQUIRED_CASE_KEYS = {"id", "category", "should_trigger", "prompt", "source"}
+DEFAULT_FORBIDDEN_STDERR_TERMS = (
+    'plugin="humanizer-plugin" error=invalid marketplace',
+    'plugin="humanizer@humanizer-local"',
+)
 
 
 def read_json(path):
@@ -52,6 +56,13 @@ def require_string_list(case, key):
     return value
 
 
+def require_optional_boolean(case, key):
+    value = case.get(key, False)
+    if not isinstance(value, bool):
+        raise ValueError(f"{case['id']}: {key} must be a boolean")
+    return value
+
+
 def validate_eval_case(case):
     missing_keys = REQUIRED_CASE_KEYS - set(case)
     if missing_keys:
@@ -67,6 +78,7 @@ def validate_eval_case(case):
     if not isinstance(case["should_trigger"], bool):
         raise ValueError(f"{case['id']}: should_trigger must be a boolean")
 
+    require_optional_boolean(case, "force_skill_file_read")
     require_string_list(case, "expected_trace_terms")
     require_string_list(case, "forbidden_trace_terms")
     require_string_list(case, "expected_stderr_terms")
@@ -79,7 +91,38 @@ def validate_eval_case(case):
     return case
 
 
-def load_eval_cases(path=DEFAULT_CASES_PATH):
+def unique_strings(strings):
+    return list(dict.fromkeys(strings))
+
+
+def with_default_forbidden_stderr_terms(case):
+    return {
+        **case,
+        "forbidden_stderr_terms": unique_strings(
+            [
+                *DEFAULT_FORBIDDEN_STDERR_TERMS,
+                *case.get("forbidden_stderr_terms", []),
+            ]
+        ),
+    }
+
+
+def validate_output_contract_references(cases, output_contract_cases):
+    unknown_contract_ids = sorted(
+        {
+            case["output_contract_case_id"]
+            for case in cases
+            if case.get("output_contract_case_id")
+            and case["output_contract_case_id"] not in output_contract_cases
+        }
+    )
+    if unknown_contract_ids:
+        raise ValueError(
+            "unknown output contract case id(s): " + ", ".join(unknown_contract_ids)
+        )
+
+
+def load_eval_cases(path=DEFAULT_CASES_PATH, output_contract_cases=None):
     data = read_json(Path(path))
     cases = data.get("cases")
     if not isinstance(cases, list):
@@ -89,12 +132,19 @@ def load_eval_cases(path=DEFAULT_CASES_PATH):
     validated_cases = []
     for case in cases:
         validate_eval_case(case)
+        case = with_default_forbidden_stderr_terms(case)
         case_id = case["id"]
         if case_id in seen_case_ids:
             raise ValueError(f"duplicate eval case id: {case_id}")
         seen_case_ids.add(case_id)
         validated_cases.append(case)
 
+    contracts = (
+        load_output_contract_cases()
+        if output_contract_cases is None
+        else output_contract_cases
+    )
+    validate_output_contract_references(validated_cases, contracts)
     return validated_cases
 
 
@@ -104,7 +154,7 @@ def load_output_contract_cases():
 
 def build_codex_prompt(case):
     prompt_lines = []
-    if case["should_trigger"]:
+    if case.get("force_skill_file_read", False):
         prompt_lines.extend(
             [
                 "Read `skills/humanizer/SKILL.md` before answering.",
