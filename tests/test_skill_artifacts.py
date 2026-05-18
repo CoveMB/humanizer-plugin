@@ -303,6 +303,8 @@ class SkillArtifactTests(unittest.TestCase):
             "workflow_dispatch:",
             "npm i -g @openai/codex@latest",
             "OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}",
+            'export CODEX_HOME="${RUNNER_TEMP:?RUNNER_TEMP is required}/codex-home"',
+            'printf \'CODEX_HOME=%s\\n\' "$CODEX_HOME" >> "$GITHUB_ENV"',
             "credentials_store = \"file\"",
             "codex login --with-api-key",
             "make test",
@@ -321,6 +323,7 @@ class SkillArtifactTests(unittest.TestCase):
         forbidden_snippets = [
             "push:",
             "pull_request:",
+            "${{ runner.temp }}",
         ]
 
         for required_snippet in required_snippets:
