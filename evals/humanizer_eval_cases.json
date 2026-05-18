@@ -1,16 +1,101 @@
 {
+  "rubrics": {
+    "humanizer_rewrite": {
+      "minimum_total_score": 32,
+      "minimum_dimension_score": 8,
+      "dimensions": [
+        {
+          "name": "factual_fidelity",
+          "question": "Does the output preserve concrete facts from the source without adding names, numbers, dates, sources, examples, or claims? Do not penalize removal of generic filler such as alignment, synergy, productivity, creativity, or innovation."
+        },
+        {
+          "name": "ai_pattern_removal",
+          "question": "Does the output remove the targeted AI-writing patterns without leaving obvious substitutes?"
+        },
+        {
+          "name": "natural_voice",
+          "question": "Does the output sound natural for the requested context rather than sterile or generic?"
+        },
+        {
+          "name": "format_compliance",
+          "question": "Does the output follow the requested format, including rewrite-only behavior when requested?"
+        }
+      ]
+    },
+    "missing_source_handling": {
+      "minimum_total_score": 24,
+      "minimum_dimension_score": 8,
+      "dimensions": [
+        {
+          "name": "fact_preservation",
+          "question": "Does the output preserve the supplied entity, metric, and timeframe?"
+        },
+        {
+          "name": "no_fabricated_source",
+          "question": "Does the output avoid inventing a report, company, study, or citation?"
+        },
+        {
+          "name": "missing_fact_handling",
+          "question": "Does the output either ask a precise missing-source question or keep the claim general?"
+        }
+      ]
+    },
+    "humanizer_audit": {
+      "minimum_total_score": 32,
+      "minimum_dimension_score": 8,
+      "dimensions": [
+        {
+          "name": "rewrite_quality",
+          "question": "Does the rewrite remove fake naming, self-narration, and inflated phrasing while preserving the core meaning?"
+        },
+        {
+          "name": "audit_notes",
+          "question": "Are the notes brief, concrete, and tied to actual changes?"
+        },
+        {
+          "name": "score_format",
+          "question": "Does the audit use the required 80-point score format?"
+        },
+        {
+          "name": "factual_integrity",
+          "question": "Does the audit avoid adding unsupported facts or claims?"
+        }
+      ]
+    },
+    "negative_fact_check": {
+      "minimum_total_score": 24,
+      "minimum_dimension_score": 8,
+      "dimensions": [
+        {
+          "name": "no_humanizer_activation",
+          "question": "Does the answer avoid rewriting or presenting itself as Humanizer output?"
+        },
+        {
+          "name": "evidence_needs",
+          "question": "Does the answer identify evidence needed to verify the claim?"
+        },
+        {
+          "name": "claim_preservation",
+          "question": "Does the answer preserve the supplied entity, metric, and timeframe while discussing verification?"
+        }
+      ]
+    }
+  },
   "cases": [
     {
       "id": "explicit_dense_rewrite",
       "category": "explicit",
       "should_trigger": true,
       "force_skill_file_read": true,
+      "force_reference_file_read": true,
       "prompt": "Use $humanizer to humanize this text. Return only the rewritten text.",
       "source": "Great question! Here is an overview. AI coding assistants serve as an enduring testament to the transformative potential of large language models, marking a pivotal moment in the rapidly evolving landscape of software development. At its core, the value proposition is clear: streamlining documentation, enhancing tests, and fostering alignment. It is not just about autocomplete; it is about unlocking creativity at scale. Industry observers have noted adoption is rising. Let me know if you want more detail.",
       "expected_trace_terms": [
-        "skills/humanizer/SKILL.md"
+        "skills/humanizer/SKILL.md",
+        "skills/humanizer/references/banned-list.md"
       ],
-      "output_contract_case_id": "dense_ai_rewrite"
+      "output_contract_case_id": "dense_ai_rewrite",
+      "rubric_id": "humanizer_rewrite"
     },
     {
       "id": "explicit_missing_source",
@@ -22,7 +107,8 @@
       "expected_trace_terms": [
         "skills/humanizer/SKILL.md"
       ],
-      "output_contract_case_id": "missing_source_handling"
+      "output_contract_case_id": "missing_source_handling",
+      "rubric_id": "missing_source_handling"
     },
     {
       "id": "explicit_audit_mode",
@@ -34,17 +120,20 @@
       "expected_trace_terms": [
         "skills/humanizer/SKILL.md"
       ],
-      "output_contract_case_id": "audit_mode"
+      "output_contract_case_id": "audit_mode",
+      "rubric_id": "humanizer_audit"
     },
     {
       "id": "implicit_dense_rewrite",
       "category": "implicit",
       "should_trigger": true,
       "force_skill_file_read": true,
+      "force_reference_file_read": true,
       "prompt": "Rewrite this so it sounds natural and less AI-generated. Return only the rewritten text.",
       "source": "Great question! Here is an overview. AI coding assistants serve as an enduring testament to the transformative potential of large language models, marking a pivotal moment in the rapidly evolving landscape of software development. At its core, the value proposition is clear: streamlining documentation, enhancing tests, and fostering alignment. It is not just about autocomplete; it is about unlocking creativity at scale. Industry observers have noted adoption is rising. Let me know if you want more detail.",
       "expected_trace_terms": [
-        "skills/humanizer/SKILL.md"
+        "skills/humanizer/SKILL.md",
+        "skills/humanizer/references/banned-list.md"
       ],
       "output_contract_case_id": "dense_ai_rewrite"
     },
@@ -65,10 +154,12 @@
       "category": "implicit",
       "should_trigger": true,
       "force_skill_file_read": true,
+      "force_reference_file_read": true,
       "prompt": "Clean up this dense AI-sounding draft. Return only the rewritten text.",
       "source": "Certainly! In today's fast-paced landscape, NovaBuild leverages a robust, scalable, and innovative framework to streamline decision-making, foster cross-functional synergy, and move the needle. It's not just a dashboard, it's a paradigm shift. 🚀",
       "expected_trace_terms": [
-        "skills/humanizer/SKILL.md"
+        "skills/humanizer/SKILL.md",
+        "skills/humanizer/references/banned-list.md"
       ],
       "output_contract_case_id": "dense_banned_list_scrub"
     },
@@ -105,7 +196,9 @@
       "forbidden_trace_terms": [
         "skills/humanizer/SKILL.md",
         "Fact-Safe Anti-Slop Editor"
-      ]
+      ],
+      "output_contract_case_id": "negative_fact_check_only",
+      "rubric_id": "negative_fact_check"
     },
     {
       "id": "negative_translate_only",
@@ -116,7 +209,8 @@
       "forbidden_trace_terms": [
         "skills/humanizer/SKILL.md",
         "Fact-Safe Anti-Slop Editor"
-      ]
+      ],
+      "output_contract_case_id": "negative_translate_only"
     },
     {
       "id": "negative_summary_only",
@@ -127,7 +221,8 @@
       "forbidden_trace_terms": [
         "skills/humanizer/SKILL.md",
         "Fact-Safe Anti-Slop Editor"
-      ]
+      ],
+      "output_contract_case_id": "negative_summary_only"
     },
     {
       "id": "negative_spellcheck_only",
@@ -138,7 +233,8 @@
       "forbidden_trace_terms": [
         "skills/humanizer/SKILL.md",
         "Fact-Safe Anti-Slop Editor"
-      ]
+      ],
+      "output_contract_case_id": "negative_spellcheck_only"
     }
   ]
 }

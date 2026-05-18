@@ -1,6 +1,6 @@
 {
   "name": "humanizer-plugin",
-  "version": "2.7.1",
+  "version": "2.7.2",
   "description": "Fact-safe Codex plugin for removing signs of AI-generated writing.",
   "author": {
     "name": "CoveMB",

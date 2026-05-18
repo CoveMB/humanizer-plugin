@@ -16,6 +16,7 @@ from tests.helpers.skill_artifacts import (
 
 
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "test.yml"
+LIVE_EVAL_WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "live-eval.yml"
 
 
 class SkillArtifactTests(unittest.TestCase):
@@ -91,11 +92,12 @@ class SkillArtifactTests(unittest.TestCase):
             "editing or reviewing",
             "fact-safe checklist",
             "scoring gate",
-            "sounds padded",
-            "reads like a person wrote it",
+            "user says text sounds padded",
+            "asks to make it read like a person wrote it",
         ]
         for required_trigger_term in required_trigger_terms:
             self.assertIn(required_trigger_term, description)
+        self.assertNotIn("or reads like a person wrote it", description)
 
     def test_allowed_tools_are_intentional(self):
         self.assertEqual(
@@ -126,6 +128,44 @@ class SkillArtifactTests(unittest.TestCase):
             r"Keep the user's exact noun where possible",
             r"including singular or plural form",
             r"teams` to `people`",
+            r"platform",
+            r"scope qualifiers",
+            r"cross-functional teams",
+        ]
+        for expected_pattern in expected_patterns:
+            self.assertRegex(self.skill_markdown, expected_pattern)
+
+    def test_mechanical_checklist_catches_flattened_scope_qualifiers(self):
+        expected_patterns = [
+            r"Changed, dropped, or generalized supplied noun phrases or scope qualifiers",
+            r"`platform`, `configuration`, and `cross-functional teams`",
+        ]
+        for expected_pattern in expected_patterns:
+            self.assertRegex(self.skill_markdown, expected_pattern)
+
+    def test_final_verification_pass_preserves_anchor_terms_and_blocks_triads(self):
+        expected_patterns = [
+            r"Final Verification Pass",
+            r"Preserve every supplied anchor noun",
+            r"`configuration`, `scalable workflows`, `platform`, and `cross-functional teams`",
+            r"Preserve adjective-noun domain phrases exactly",
+            r"parallel gerund triads",
+            r"`writing documentation, improving tests, and keeping work aligned`",
+            r"Do not replace vague source benefits with new benefit claims",
+            r"`routine code`, `rough edges`, `by hand`, `the actual problem`, or `bigger value`",
+        ]
+        for expected_pattern in expected_patterns:
+            self.assertRegex(self.skill_markdown, expected_pattern)
+
+    def test_rule_of_three_guidance_drops_generic_filler_items(self):
+        expected_patterns = [
+            r"Do not preserve a three-item list just because the source used one",
+            r"generic filler item",
+            r"do not invent a third work category",
+            r"alignment",
+            r"fostering alignment",
+            r"keeping teams aligned",
+            r"writing documentation, improving tests, and helping developers keep momentum",
         ]
         for expected_pattern in expected_patterns:
             self.assertRegex(self.skill_markdown, expected_pattern)
@@ -200,11 +240,27 @@ class SkillArtifactTests(unittest.TestCase):
         self.assertIn(".codex-plugin/plugin.json", readme_markdown)
         self.assertIn("scripts/run_humanizer_evals.py", readme_markdown)
         self.assertIn("--timeout-seconds", readme_markdown)
+        self.assertIn("--rubric-grade", readme_markdown)
         self.assertIn("https://github.com/CoveMB/humanizer-plugin.git", readme_markdown)
         self.assertNotIn("--branch humanizer-plugin", readme_markdown)
         self.assertNotIn("github.com/CoveMB/humanizer.git", readme_markdown)
         self.assertNotIn("plugins/humanizer/", readme_markdown)
         self.assertNotIn("scripts/sync-plugin.sh", readme_markdown)
+
+    def test_readme_documents_trigger_behavior_and_limits(self):
+        readme_markdown = read_text(REPO_ROOT / "README.md")
+        expected_patterns = [
+            r"### Trigger behavior",
+            r"can auto-select Humanizer",
+            r"This release note sounds padded",
+            r"reads like a person wrote it",
+            r"Use Humanizer",
+            r"not treat auto-selection as guaranteed",
+            r"codex exec",
+            r"does not expose a separate skill-invocation event",
+        ]
+        for expected_pattern in expected_patterns:
+            self.assertRegex(readme_markdown, expected_pattern)
 
     def test_ci_runs_deterministic_quality_gates(self):
         workflow = read_text(WORKFLOW_PATH)
@@ -219,6 +275,33 @@ class SkillArtifactTests(unittest.TestCase):
         ]
         for required_command in required_commands:
             self.assertIn(required_command, workflow)
+
+    def test_live_eval_workflow_is_manual_and_authenticates_codex(self):
+        workflow = read_text(LIVE_EVAL_WORKFLOW_PATH)
+        required_snippets = [
+            "workflow_dispatch:",
+            "npm i -g @openai/codex@latest",
+            "OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}",
+            "credentials_store = \"file\"",
+            "codex login --with-api-key",
+            "make test",
+            "make eval-humanizer-dry-run",
+            "rubric_grade:",
+            "EVAL_RUBRIC_GRADE: ${{ inputs.rubric_grade }}",
+            "eval_args+=(--rubric-grade)",
+            "scripts/run_humanizer_evals.py",
+            "actions/upload-artifact@v4",
+        ]
+        forbidden_snippets = [
+            "push:",
+            "pull_request:",
+        ]
+
+        for required_snippet in required_snippets:
+            self.assertIn(required_snippet, workflow)
+
+        for forbidden_snippet in forbidden_snippets:
+            self.assertNotIn(forbidden_snippet, workflow)
 
 
 if __name__ == "__main__":

@@ -32,19 +32,31 @@
           "streamlining",
           "enhancing",
           "fostering",
+          "alignment",
+          "aligned",
           "not just",
           "unlocking creativity",
           "Industry observers",
-          "Let me know"
+          "Let me know",
+          "grind",
+          "routine code",
+          "rough edges",
+          "by hand",
+          "the actual problem",
+          "bigger value"
         ],
         "must_not_match": [
           "(?i)future looks bright",
-          "(?i)game[- ]changer"
+          "(?i)game[- ]changer",
+          "(?i)\\bdoc(?:s|umentation)?\\b,\\s+tests?,\\s+and\\s+[^.?!,;:]+"
         ],
         "no_em_dash": true,
         "no_chatbot_wrapper": true,
         "no_contrast_frame": true,
+        "no_rule_of_three": true,
         "no_markdown_fence": true,
+        "no_new_numbers": true,
+        "no_new_named_entities": true,
         "rewrite_only": true
       }
     },
@@ -80,7 +92,10 @@
         "no_em_dash": true,
         "no_chatbot_wrapper": true,
         "no_contrast_frame": true,
+        "no_rule_of_three": true,
         "no_markdown_fence": true,
+        "no_new_numbers": true,
+        "no_new_named_entities": true,
         "rewrite_only": true
       }
     },
@@ -111,7 +126,10 @@
         "no_em_dash": true,
         "no_chatbot_wrapper": true,
         "no_contrast_frame": true,
+        "no_rule_of_three": true,
         "no_markdown_fence": true,
+        "no_new_numbers": true,
+        "no_new_named_entities": true,
         "rewrite_only": true
       }
     },
@@ -147,6 +165,8 @@
         "no_chatbot_wrapper": true,
         "no_contrast_frame": true,
         "no_markdown_fence": true,
+        "no_new_numbers": true,
+        "no_new_named_entities": true,
         "max_question_marks": 0
       }
     },
@@ -184,7 +204,10 @@
         "no_em_dash": true,
         "no_chatbot_wrapper": true,
         "no_contrast_frame": true,
+        "no_rule_of_three": true,
         "no_markdown_fence": true,
+        "no_new_numbers": true,
+        "no_new_named_entities": true,
         "rewrite_only": true
       }
     },
@@ -216,6 +239,8 @@
         "no_chatbot_wrapper": true,
         "no_contrast_frame": true,
         "no_markdown_fence": true,
+        "no_new_numbers": true,
+        "no_new_named_entities": true,
         "rewrite_only": true
       }
     },
@@ -235,19 +260,115 @@
         "must_include": [
           "configuration",
           "scalable workflows",
-          "platform"
+          "platform",
+          "cross-functional teams"
         ],
         "must_not_include": [
           "robust foundation",
           "enabling",
           "seamlessly",
           "leverage",
-          "unlock productivity",
-          "cross-functional"
+          "unlock productivity"
         ],
         "no_em_dash": true,
         "no_chatbot_wrapper": true,
         "no_contrast_frame": true,
+        "no_markdown_fence": true,
+        "no_new_numbers": true,
+        "no_new_named_entities": true,
+        "rewrite_only": true
+      }
+    },
+    {
+      "id": "negative_fact_check_only",
+      "mode": "answer",
+      "tags": [
+        "negative_no_trigger"
+      ],
+      "prompt": "Fact-check this claim and list what evidence would be needed. Do not rewrite it.",
+      "source": "Atlas Note adoption increased by 43% last quarter according to industry reports.",
+      "constraints": {
+        "must_include": [
+          "Atlas Note",
+          "43%",
+          "evidence"
+        ],
+        "must_not_include": [
+          "Humanizer",
+          "rewritten text",
+          "cleaner rewrite"
+        ],
+        "no_chatbot_wrapper": true,
+        "no_markdown_fence": true
+      }
+    },
+    {
+      "id": "negative_translate_only",
+      "mode": "translate",
+      "tags": [
+        "negative_no_trigger"
+      ],
+      "prompt": "Translate this sentence into French. Do not edit the style.",
+      "source": "The product includes offline comments and faster issue search.",
+      "constraints": {
+        "must_match": [
+          "(?i)\\bproduit\\b",
+          "(?i)hors[- ]ligne",
+          "(?i)recherche"
+        ],
+        "must_not_include": [
+          "offline comments",
+          "faster issue search",
+          "Humanizer"
+        ],
+        "no_chatbot_wrapper": true,
+        "no_markdown_fence": true
+      }
+    },
+    {
+      "id": "negative_summary_only",
+      "mode": "summary",
+      "tags": [
+        "negative_no_trigger"
+      ],
+      "prompt": "Summarize this into one bullet without rewriting the prose style.",
+      "source": "The release includes offline comments, faster issue search, and a redesigned notification settings page.",
+      "constraints": {
+        "must_include": [
+          "offline comments",
+          "faster issue search",
+          "redesigned notification settings page"
+        ],
+        "must_match": [
+          "(?m)^\\s*[-*]\\s+"
+        ],
+        "must_not_include": [
+          "Humanizer",
+          "rewritten text"
+        ],
+        "no_chatbot_wrapper": true,
+        "no_markdown_fence": true
+      }
+    },
+    {
+      "id": "negative_spellcheck_only",
+      "mode": "spellcheck",
+      "tags": [
+        "negative_no_trigger"
+      ],
+      "prompt": "Correct spelling mistakes only. Do not change tone, structure, or wording otherwise.",
+      "source": "The releese includes offline commments and faster issue serch.",
+      "constraints": {
+        "must_include": [
+          "The release includes offline comments and faster issue search."
+        ],
+        "must_not_include": [
+          "releese",
+          "commments",
+          "serch",
+          "Humanizer"
+        ],
+        "no_chatbot_wrapper": true,
         "no_markdown_fence": true,
         "rewrite_only": true
       }

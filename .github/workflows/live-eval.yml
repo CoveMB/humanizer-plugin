@@ -1,0 +1,94 @@
+name: Live Eval
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Codex model to use for live evals"
+        required: true
+        default: "gpt-5.5"
+      timeout_seconds:
+        description: "Per-case timeout in seconds"
+        required: true
+        default: "300"
+      filter:
+        description: "Optional single eval case id to run"
+        required: false
+        default: ""
+      rubric_grade:
+        description: "Run optional rubric grading pass"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  live-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CODEX_HOME: ${{ runner.temp }}/codex-home
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Codex CLI
+        run: npm i -g @openai/codex@latest
+
+      - name: Authenticate Codex CLI
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY secret is required" >&2
+            exit 2
+          fi
+          mkdir -p "$CODEX_HOME"
+          {
+            printf '[cli_auth]\n'
+            printf 'credentials_store = "file"\n'
+          } > "$CODEX_HOME/config.toml"
+          printf '%s' "$OPENAI_API_KEY" | codex login --with-api-key
+          codex login status
+
+      - name: Run deterministic tests
+        run: make test
+
+      - name: Check eval matrix
+        run: make eval-humanizer-dry-run
+
+      - name: Run live eval
+        env:
+          EVAL_MODEL: ${{ inputs.model }}
+          EVAL_TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
+          EVAL_FILTER: ${{ inputs.filter }}
+          EVAL_RUBRIC_GRADE: ${{ inputs.rubric_grade }}
+        run: |
+          eval_args=(--model "$EVAL_MODEL" --timeout-seconds "$EVAL_TIMEOUT_SECONDS")
+          if [ -n "$EVAL_FILTER" ]; then
+            eval_args+=(--filter "$EVAL_FILTER")
+          fi
+          if [ "$EVAL_RUBRIC_GRADE" = "true" ]; then
+            eval_args+=(--rubric-grade)
+          fi
+          python3 scripts/run_humanizer_evals.py "${eval_args[@]}"
+
+      - name: Upload eval artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: humanizer-live-eval-artifacts
+          path: evals/artifacts/latest/
+          if-no-files-found: ignore

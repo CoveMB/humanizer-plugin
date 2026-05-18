@@ -268,6 +268,26 @@ Use Humanizer to rewrite this:
 
 If your Codex client supports explicit skill mentions, select the Humanizer skill and provide the draft.
 
+### Trigger behavior
+
+After Humanizer is installed and the skill/plugin catalog is reloaded, clients that support automatic skill selection can auto-select Humanizer when the prompt clearly asks for anti-AI writing cleanup. Typical trigger phrasing includes:
+
+```text
+This release note sounds padded. Tighten it without adding facts.
+```
+
+```text
+Edit this documentation paragraph so it reads like a person wrote it, but keep the technical meaning intact.
+```
+
+```text
+Clean up this dense AI-sounding draft. Return only the rewritten text.
+```
+
+Do not treat auto-selection as guaranteed in workflows where activation matters. For deterministic runs, reviews, CI, or support instructions, use an explicit prompt such as `Use Humanizer to rewrite this:` or select the Humanizer skill/plugin in the client UI.
+
+The repository live evals include contextual trigger prompts, but `codex exec` currently does not expose a separate skill-invocation event. For that reason, positive live cases force a `skills/humanizer/SKILL.md` read so the trace proves the current skill instructions were used; they validate prompt coverage and output behavior, not an end-to-end guarantee of automatic client-side selection.
+
 ### Voice calibration
 
 Provide a sample when you want the rewrite to sound like a specific person:
@@ -377,6 +397,12 @@ output-dir/
   voice_calibration.txt
   audit_mode.txt
   dense_banned_list_scrub.txt
+  contextual_release_notes.txt
+  contextual_docs_cleanup.txt
+  negative_fact_check_only.txt
+  negative_translate_only.txt
+  negative_summary_only.txt
+  negative_spellcheck_only.txt
 ```
 
 Then run:
@@ -397,13 +423,32 @@ Then run the live suite when the local Codex CLI is authenticated and the model 
 make eval-humanizer
 ```
 
-The live runner executes the prompts in `evals/humanizer_eval_cases.json` through `codex exec --json` in a read-only sandbox, writes JSONL traces and final outputs under `evals/artifacts/latest/`, checks trigger-related trace terms, and reuses the saved-output contracts for cases that map to `tests/fixtures/humanizer_contract_cases.json`.
+The live runner executes the prompts in `evals/humanizer_eval_cases.json` through `codex exec --json` in a read-only sandbox, writes JSONL traces and final outputs under `evals/artifacts/latest/`, checks trigger-related trace terms, records token and command counts in the summary, and reuses the saved-output contracts for cases that map to `tests/fixtures/humanizer_contract_cases.json`.
 
-For reproducibility, the runner ignores user config and project rules, points Codex at this repository as `humanizer-plugin-local`, enables `humanizer-plugin@humanizer-plugin-local`, uses ephemeral sessions, and pins the default eval model to `gpt-5.5`. Current positive cases set `force_skill_file_read` so the trace proves the current `skills/humanizer/SKILL.md` file was used; cases can opt out of that behavior when testing an environment where Codex exposes the plugin skill directly. Use `EVAL_ARGS='--model <model>'` to test another model, or `EVAL_ARGS='--timeout-seconds 600'` for slower environments.
+Some live cases also define rubric IDs for semantic review. Add `EVAL_ARGS='--rubric-grade'` to run the optional second-pass grader, which writes rubric prompts, traces, stderr, and JSON grades under `evals/artifacts/latest/`.
+
+For reproducibility, the runner ignores user config and project rules, points Codex at this repository as `humanizer-plugin-local`, enables `humanizer-plugin@humanizer-plugin-local`, uses ephemeral sessions, and pins the default eval model to `gpt-5.5`. Positive skill cases set `force_skill_file_read` so the trace proves the current `skills/humanizer/SKILL.md` file was used; dense catalog cases can also set `force_reference_file_read` to prove `skills/humanizer/references/banned-list.md` was loaded. The runner does not treat output-only direct `$humanizer` prompts as skill activation proof, because current `codex exec` traces do not expose a separate skill-invocation event for that path. Use `EVAL_ARGS='--model <model>'` to test another model, or `EVAL_ARGS='--timeout-seconds 600'` for slower environments.
+
+### Manual live eval workflow
+
+Normal push and pull-request CI runs only deterministic checks. The live eval is available as a separate GitHub Actions workflow named `Live Eval` and must be started manually from the Actions tab.
+
+To enable it:
+
+1. Create an OpenAI Platform API key with access to the eval model.
+2. Add a repository Actions secret named `OPENAI_API_KEY`.
+3. Confirm the API project has billing and rate limits for the selected model.
+4. Open GitHub Actions, choose `Live Eval`, click `Run workflow`, select the branch, and optionally set:
+   - `model`, default `gpt-5.5`
+   - `timeout_seconds`, default `300`
+   - `filter`, a single eval case id for a focused run
+   - `rubric_grade`, default `false`, to run the optional rubric grading pass
+
+The workflow installs the Codex CLI, stores auth in the temporary runner `CODEX_HOME`, runs `make test`, runs `make eval-humanizer-dry-run`, then runs the live eval. It uploads `evals/artifacts/latest/` even when the eval fails, so traces, prompts, stderr, and outputs are available for debugging.
 
 ## Sources and credits
 
-Humanizer 2.7.1 is derived from and inspired by these sources:
+Humanizer 2.7.2 is derived from and inspired by these sources:
 
 - [humanizer](https://github.com/blader/humanizer) by blader, based on Wikipedia's "Signs of AI writing" guide.
 - [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing), maintained by WikiProject AI Cleanup.
@@ -414,7 +459,8 @@ See `NOTICE` for attribution and license details.
 
 ## Version history
 
-- **2.7.1**: Tightened Codex skill activation metadata for padded prose and "reads like a person wrote it" edit requests.
+- **2.7.2**: Tightened fact preservation for scoped noun phrases and made rule-of-three cleanup drop generic filler items instead of preserving source triplets mechanically.
+- **2.7.1**: Tightened Codex skill activation metadata for padded prose and requests to make text read like a person wrote it.
 - **2.7.0**: Added the fact-safe quality gate, including stop-slop-inspired mechanical checks, scoring thresholds, and Tagore-inspired substance scoring while keeping Humanizer's factual-integrity rules.
 - **2.6.0**: Ported stricter guardrails for factual integrity, fake naming, self-narration, rhetorical hooks, no-preamble output, and safer examples.
 - **2.5.1**: Added passive voice and subjectless fragments, raising the catalog to 29 patterns.

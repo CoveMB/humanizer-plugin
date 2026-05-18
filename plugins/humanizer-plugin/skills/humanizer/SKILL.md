@@ -1,6 +1,6 @@
 ---
 name: humanizer
-version: 2.7.1
+version: 2.7.2
 description: |
   Remove signs of AI-generated writing from text. Use when editing or reviewing
   text to make it sound more natural and human-written. Based on Wikipedia's
@@ -9,7 +9,7 @@ description: |
   attributions, em dash overuse, rule of three, AI vocabulary words, passive
   voice, negative parallelisms, fake naming, self-narration, and filler phrases.
   Uses a fact-safe checklist and scoring gate to avoid clean but soulless rewrites.
-  Also use when text sounds padded, generic, or reads like a person wrote it.
+  Also use when the user says text sounds padded or generic, or asks to make it read like a person wrote it.
 license: MIT
 compatibility: claude-code opencode codex
 allowed-tools:
@@ -46,7 +46,7 @@ When given text to humanize:
 
 1. **Do not invent details.** If the source is vague, keep the rewrite vague or ask for missing facts. Never fabricate studies, people, companies, quotes, metrics, examples, timelines, prices, or citations to make the prose feel concrete.
 2. **No em dashes.** Use commas, periods, colons, semicolons, or parentheses unless the user explicitly asks to preserve them.
-3. **No forced rule-of-three lists.** Use the number of items the content naturally needs.
+3. **No forced rule-of-three lists.** Use the number of items the content naturally needs. Do not preserve a three-item list just because the source used one. If one item is a generic filler item such as alignment, synergy, productivity, creativity, or innovation, drop it or rewrite the concrete items directly. If the source only supports documentation and tests, keep only documentation and tests; do not invent a third work category. Do not rewrite `fostering alignment` as `keeping teams aligned`; cut the filler unless the source gives a concrete coordination claim. Do not output gerund triads like `writing documentation, improving tests, and helping developers keep momentum`.
 4. **No contrast framing.** Avoid "It's not X, it's Y," "Not only X, but Y," "More than just X," and escalation ladders like "It's not A. It's not even B. It's C."
 5. **No `not just` phrasing.** Do not use `not just`, even without a following `but`. Rewrite the thought directly, such as `speed matters, but quality matters too`.
 6. **No dramatic staccato bursts.** Do not stack three or more short sentences for effect.
@@ -55,7 +55,18 @@ When given text to humanize:
 9. **No self-narration.** Delete phrases that announce the point instead of making it, such as "this highlights," "this underscores," "the key takeaway is," and "here's why this matters."
 10. **No chatbot wrapper.** Do not add "Here is," "I hope this helps," "let me know," or similar preamble/closing text around the rewrite.
 11. **No vague attribution.** Delete or generalize claims credited only to "industry observers," "experts," "reports," "studies," or unnamed sources. If the user wants the claim kept specific, ask for the source.
-12. **Preserve supplied concrete nouns.** Keep concrete product, object, feature, and domain nouns the user supplied, such as dashboard, notes, tests, flights, or comments, unless removing the noun is necessary to avoid a false claim. Keep the user's exact noun where possible, including singular or plural form; do not change `teams` to `people`, `dashboard` to `tool`, or `comments` to `feedback` just to smooth the sentence.
+12. **Preserve supplied concrete nouns.** Keep concrete product, object, feature, and domain nouns the user supplied, such as platform, configuration, dashboard, notes, tests, flights, or comments, unless removing the noun is necessary to avoid a false claim. Keep the user's exact noun where possible, including singular or plural form; do not change `teams` to `people`, `platform` to `tool`, `dashboard` to `tool`, or `comments` to `feedback` just to smooth the sentence. Preserve scope qualifiers that define the meaning of a noun phrase, such as `cross-functional teams`; do not flatten that to `teams`.
+
+
+## Final Verification Pass
+
+Before answering, compare the final rewrite against the source:
+
+- Preserve every supplied anchor noun or phrase that defines the subject, object, audience, feature, product, domain, or scope. If the source says `configuration`, `scalable workflows`, `platform`, and `cross-functional teams`, the rewrite must still include those exact terms unless the user explicitly asks for a summary.
+- Preserve adjective-noun domain phrases exactly when they define the technical meaning. Do not turn `scalable workflows` into `scaling workflows`.
+- Remove parallel gerund triads such as `writing documentation, improving tests, and keeping work aligned`. Keep one or two concrete items, split the thought, or replace the filler item with a direct sentence.
+- Do not replace vague source benefits with new benefit claims. Avoid adding examples such as `routine code`, `rough edges`, `by hand`, `the actual problem`, or `bigger value` unless the source supplied them.
+- Do not replace removed pitch phrases with softer pitch phrases such as `the bigger value is`, `take friction out`, `keep momentum`, or `routine writing and checking around code`.
 
 
 ## Output Format
@@ -95,6 +106,8 @@ Before final output, check the rewrite for:
 - Chatbot wrappers, praise, hedging, or "let me know" closers
 - Passive voice or subjectless fragments where naming the actor improves clarity
 - Inanimate agency where a concept appears to do a human action
+- Changed, dropped, or generalized supplied noun phrases or scope qualifiers. Restore exact anchor terms such as `platform`, `configuration`, and `cross-functional teams` when they define the product, audience, domain, or scope.
+- Generic filler items smuggled back into a shortened list, especially alignment, synergy, productivity, creativity, or innovation
 - Paragraphs with identical rhythm or a too-perfect ending
 
 
@@ -325,6 +338,14 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 
 **After:**
 > The event includes talks and panels. There's also time for informal networking between sessions.
+
+**Before:**
+> The value proposition is clear: streamlining documentation, enhancing tests, and fostering alignment.
+
+**After:**
+> AI coding assistants can help with documentation and tests.
+
+Do not turn the generic third item into "keeping teams aligned" or similar phrasing unless the source gives a concrete coordination claim.
 
 
 ### 11. Elegant Variation (Synonym Cycling)
