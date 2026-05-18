@@ -70,6 +70,27 @@ class SkillArtifactTests(unittest.TestCase):
         )
         self.assertRegex(self.manifest["version"], r"^\d+\.\d+\.\d+$")
 
+    def test_license_metadata_discloses_mixed_license_scope(self):
+        readme_markdown = read_text(REPO_ROOT / "README.md")
+        notice_text = read_text(REPO_ROOT / "NOTICE")
+        expected_terms = [
+            "CC BY-SA 4.0",
+            "Wikipedia-derived material",
+            "https://creativecommons.org/licenses/by-sa/4.0/",
+        ]
+
+        self.assertEqual(self.manifest["license"], "MIT AND CC-BY-SA-4.0")
+        self.assertEqual(
+            frontmatter_scalar(self.frontmatter, "license"),
+            "MIT AND CC-BY-SA-4.0",
+        )
+        self.assertTrue(
+            self.manifest["interface"]["termsOfServiceURL"].endswith("#license")
+        )
+        for expected_term in expected_terms:
+            with self.subTest(term=expected_term):
+                self.assertIn(expected_term, readme_markdown + notice_text)
+
     def test_frontmatter_defines_trigger_contract(self):
         self.assertEqual(frontmatter_scalar(self.frontmatter, "name"), "humanizer")
         description = self.frontmatter.lower()

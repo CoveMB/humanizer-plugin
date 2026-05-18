@@ -8,7 +8,7 @@
   },
   "homepage": "https://github.com/CoveMB/humanizer-plugin",
   "repository": "https://github.com/CoveMB/humanizer-plugin",
-  "license": "MIT",
+  "license": "MIT AND CC-BY-SA-4.0",
   "keywords": [
     "writing",
     "editing",
@@ -29,7 +29,7 @@
     ],
     "websiteURL": "https://github.com/CoveMB/humanizer-plugin",
     "privacyPolicyURL": "https://github.com/CoveMB/humanizer-plugin/blob/main/README.md",
-    "termsOfServiceURL": "https://github.com/CoveMB/humanizer-plugin/blob/main/LICENSE",
+    "termsOfServiceURL": "https://github.com/CoveMB/humanizer-plugin/blob/main/README.md#license",
     "defaultPrompt": [
       "Humanize this text:",
       "Match my writing sample and rewrite this.",

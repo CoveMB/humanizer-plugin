@@ -10,7 +10,7 @@ description: |
   voice, negative parallelisms, fake naming, self-narration, and filler phrases.
   Uses a fact-safe checklist and scoring gate to avoid clean but soulless rewrites.
   Also use when the user says text sounds padded or generic, or asks to make it read like a person wrote it.
-license: MIT
+license: MIT AND CC-BY-SA-4.0
 compatibility: claude-code opencode codex
 allowed-tools:
   - Read

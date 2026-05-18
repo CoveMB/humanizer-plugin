@@ -483,4 +483,8 @@ See `NOTICE` for attribution and license details.
 
 ## License
 
-MIT. See `LICENSE`.
+Humanizer Plugin uses mixed licensing:
+
+- Original repository code, tests, scripts, plugin metadata, and CoveMB-authored additions are MIT. See `LICENSE`.
+- MIT-licensed upstream material from blader's humanizer, stop-slop, and Tagore is credited in `NOTICE`.
+- Text and pattern guidance adapted from Wikipedia's "Signs of AI writing" remain under CC BY-SA 4.0. Those portions are attributed in `NOTICE`; downstream adaptations should preserve the CC BY-SA 4.0 attribution, license, and change notices.

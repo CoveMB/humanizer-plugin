@@ -1,26 +1,37 @@
 Humanizer Plugin
 Copyright (c) 2026 CoveMB
 
-This product includes work adapted from the following open-source sources:
+This product includes original work and material adapted from the following
+open-source sources:
 
-1. humanizer
+1. Humanizer Plugin original code, tests, scripts, plugin metadata, and
+   CoveMB-authored additions
+   Author: CoveMB
+   Source: https://github.com/CoveMB/humanizer-plugin
+   License: MIT
+
+2. humanizer
    Author: blader
    Source: https://github.com/blader/humanizer
    License: MIT
 
-2. Wikipedia:Signs of AI writing
+3. Wikipedia:Signs of AI writing
    Maintainer: WikiProject AI Cleanup
    Source: https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing
    License: CC BY-SA 4.0
+   Changes: Adapted, reorganized, and expanded into a skill catalog,
+   reference list, examples, and plugin documentation for Humanizer Plugin.
 
-3. stop-slop
+4. stop-slop
    Author: Hardik Pandya
    Source: https://github.com/hardikpandya/stop-slop
    License: MIT
 
-4. Tagore
+5. Tagore
    Author: Apurv Ray
    Source: https://github.com/apurvrdx1/tagore
    License: MIT
 
-The full license terms for Humanizer Plugin are in LICENSE.
+The MIT terms for repository-owned code and MIT-derived material are in LICENSE.
+The CC BY-SA 4.0 terms for Wikipedia-derived material are available at
+https://creativecommons.org/licenses/by-sa/4.0/.
