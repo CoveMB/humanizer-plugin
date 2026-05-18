@@ -1,11 +1,10 @@
-import json
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from tests.helpers.skill_artifacts import FIXTURE_PATH, REPO_ROOT
+from tests.helpers.skill_artifacts import REPO_ROOT, load_fixture_cases
 
 
 SCRIPT_PATH = REPO_ROOT / "scripts" / "validate_humanizer_outputs.py"
@@ -13,63 +12,51 @@ SCRIPT_PATH = REPO_ROOT / "scripts" / "validate_humanizer_outputs.py"
 
 class ValidateHumanizerOutputsScriptTests(unittest.TestCase):
     def test_script_passes_when_all_outputs_satisfy_constraints(self):
-        fixture = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
         with tempfile.TemporaryDirectory() as output_directory:
             output_path = Path(output_directory)
-            for case in fixture["cases"]:
-                output_path.joinpath(f"{case['id']}.txt").write_text(
-                    self._passing_output_for(case),
-                    encoding="utf-8",
-                )
+            self._write_passing_outputs(output_path)
 
-            result = subprocess.run(
-                [sys.executable, str(SCRIPT_PATH), str(output_path)],
-                cwd=REPO_ROOT,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
+            result = self._run_validator(output_path)
 
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         self.assertIn("validated", result.stdout)
 
     def test_script_fails_when_output_file_is_missing(self):
         with tempfile.TemporaryDirectory() as output_directory:
-            result = subprocess.run(
-                [sys.executable, str(SCRIPT_PATH), output_directory],
-                cwd=REPO_ROOT,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
+            result = self._run_validator(output_directory)
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("missing output file", result.stderr)
 
     def test_script_fails_when_output_violates_contract(self):
-        fixture = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
         with tempfile.TemporaryDirectory() as output_directory:
             output_path = Path(output_directory)
-            for case in fixture["cases"]:
-                output_path.joinpath(f"{case['id']}.txt").write_text(
-                    self._passing_output_for(case),
-                    encoding="utf-8",
-                )
+            self._write_passing_outputs(output_path)
             output_path.joinpath("dense_ai_rewrite.txt").write_text(
                 "Great question! Here is a rewrite with a Gartner claim.",
                 encoding="utf-8",
             )
 
-            result = subprocess.run(
-                [sys.executable, str(SCRIPT_PATH), str(output_path)],
-                cwd=REPO_ROOT,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
+            result = self._run_validator(output_path)
 
         self.assertEqual(result.returncode, 1)
         self.assertIn("forbidden fragment present", result.stderr)
+
+    def _write_passing_outputs(self, output_path):
+        for case in load_fixture_cases():
+            output_path.joinpath(f"{case['id']}.txt").write_text(
+                self._passing_output_for(case),
+                encoding="utf-8",
+            )
+
+    def _run_validator(self, output_directory):
+        return subprocess.run(
+            [sys.executable, str(SCRIPT_PATH), str(output_directory)],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
 
     def _passing_output_for(self, case):
         required_fragments = case["constraints"].get("must_include", [])

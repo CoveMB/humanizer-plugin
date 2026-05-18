@@ -59,23 +59,9 @@ class SkillArtifactTests(unittest.TestCase):
         self.assertEqual(source["source"], "local")
         self.assertTrue(source["path"].startswith("./"))
         self.assertTrue(source["path"][2:])
-        self.assertEqual(REPO_ROOT / source["path"], MARKETPLACE_PLUGIN_PATH)
+        self.assertEqual(source["path"], "./.")
+        self.assertEqual((REPO_ROOT / source["path"]).resolve(), MARKETPLACE_PLUGIN_PATH)
         self.assertTrue(MARKETPLACE_PLUGIN_PATH.joinpath(".codex-plugin", "plugin.json").exists())
-
-    def test_marketplace_plugin_copy_stays_in_sync(self):
-        copied_manifest_path = MARKETPLACE_PLUGIN_PATH / ".codex-plugin" / "plugin.json"
-        copied_skill_path = MARKETPLACE_PLUGIN_PATH / "skills" / "humanizer" / "SKILL.md"
-        copied_reference_path = (
-            MARKETPLACE_PLUGIN_PATH
-            / "skills"
-            / "humanizer"
-            / "references"
-            / "banned-list.md"
-        )
-
-        self.assertEqual(read_text(MANIFEST_PATH), read_text(copied_manifest_path))
-        self.assertEqual(read_text(SKILL_PATH), read_text(copied_skill_path))
-        self.assertEqual(read_text(REFERENCE_PATH), read_text(copied_reference_path))
 
     def test_manifest_and_skill_versions_match(self):
         self.assertEqual(

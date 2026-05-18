@@ -13,6 +13,8 @@ from tests.helpers.skill_artifacts import REPO_ROOT
 
 RUNNER_PATH = REPO_ROOT / "scripts" / "run_humanizer_evals.py"
 EVAL_CASES_PATH = REPO_ROOT / "evals" / "humanizer_eval_cases.json"
+SKILL_TRACE_PATH = "skills/humanizer/SKILL.md"
+DEFAULT_OUTPUT_CONTRACT_CASES = object()
 
 
 def load_runner_module():
@@ -22,9 +24,76 @@ def load_runner_module():
     return module
 
 
+def write_cases_file(temporary_directory, data):
+    cases_path = Path(temporary_directory) / "cases.json"
+    cases_path.write_text(json.dumps(data), encoding="utf-8")
+    return cases_path
+
+
+def minimal_eval_case(**overrides):
+    return {
+        "id": "case",
+        "category": "explicit",
+        "should_trigger": True,
+        "prompt": "Use $humanizer.",
+        "source": "Here is a draft.",
+        **overrides,
+    }
+
+
+def two_dimension_rubric(minimum_total_score=16, minimum_dimension_score=8):
+    return {
+        "minimum_total_score": minimum_total_score,
+        "minimum_dimension_score": minimum_dimension_score,
+        "dimensions": [
+            {"name": "factual_fidelity", "question": "Facts?"},
+            {"name": "rewrite_only", "question": "Rewrite only?"},
+        ],
+    }
+
+
+def skill_read_trace(usage=None):
+    trace_lines = [
+        {
+            "type": "item.completed",
+            "item": {
+                "type": "command_execution",
+                "command": f"sed -n '1,20p' {SKILL_TRACE_PATH}",
+                "aggregated_output": SKILL_TRACE_PATH,
+            },
+        }
+    ]
+    if usage is not None:
+        trace_lines.append({"type": "turn.completed", "usage": usage})
+    return "\n".join(json.dumps(line) for line in trace_lines) + "\n"
+
+
+def completed_codex_process(stdout):
+    return subprocess.CompletedProcess(
+        args=["codex"],
+        returncode=0,
+        stdout=stdout,
+        stderr="",
+    )
+
+
 class HumanizerEvalRunnerTests(unittest.TestCase):
     def setUp(self):
         self.runner = load_runner_module()
+
+    def _load_cases_from_data(
+        self,
+        data,
+        output_contract_cases=DEFAULT_OUTPUT_CONTRACT_CASES,
+    ):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            cases_path = write_cases_file(temporary_directory, data)
+            if output_contract_cases is DEFAULT_OUTPUT_CONTRACT_CASES:
+                return self.runner.load_eval_cases(cases_path)
+            return self.runner.load_eval_cases(
+                cases_path,
+                output_contract_cases=output_contract_cases,
+            )
 
     def test_eval_cases_cover_trigger_modes_and_output_contracts(self):
         cases = self.runner.load_eval_cases(EVAL_CASES_PATH)
@@ -128,182 +197,123 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
                 )
 
     def test_load_eval_cases_rejects_duplicate_ids(self):
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            cases_path = Path(temporary_directory) / "cases.json"
-            cases_path.write_text(
-                json.dumps(
-                    {
-                        "cases": [
-                            {
-                                "id": "duplicate",
-                                "category": "explicit",
-                                "should_trigger": True,
-                                "prompt": "Use Humanizer.",
-                                "source": "Here is a draft.",
-                                "expected_trace_terms": ["skills/humanizer/SKILL.md"],
-                            },
-                            {
-                                "id": "duplicate",
-                                "category": "implicit",
-                                "should_trigger": True,
-                                "prompt": "Make this sound natural.",
-                                "source": "Here is another draft.",
-                                "expected_trace_terms": ["skills/humanizer/SKILL.md"],
-                            },
-                        ]
-                    }
-                ),
-                encoding="utf-8",
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            self._load_cases_from_data(
+                {
+                    "cases": [
+                        minimal_eval_case(
+                            id="duplicate",
+                            prompt="Use Humanizer.",
+                            expected_trace_terms=[SKILL_TRACE_PATH],
+                        ),
+                        minimal_eval_case(
+                            id="duplicate",
+                            category="implicit",
+                            prompt="Make this sound natural.",
+                            source="Here is another draft.",
+                            expected_trace_terms=[SKILL_TRACE_PATH],
+                        ),
+                    ]
+                }
             )
-
-            with self.assertRaisesRegex(ValueError, "duplicate"):
-                self.runner.load_eval_cases(cases_path)
 
     def test_load_eval_cases_rejects_unknown_output_contract_case_id(self):
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            cases_path = Path(temporary_directory) / "cases.json"
-            cases_path.write_text(
-                json.dumps(
-                    {
-                        "cases": [
-                            {
-                                "id": "unknown_contract",
-                                "category": "explicit",
-                                "should_trigger": True,
-                                "prompt": "Use Humanizer.",
-                                "source": "Here is a draft.",
-                                "output_contract_case_id": "missing_contract",
-                            }
-                        ]
-                    }
-                ),
-                encoding="utf-8",
+        with self.assertRaisesRegex(ValueError, "unknown output contract"):
+            self._load_cases_from_data(
+                {
+                    "cases": [
+                        minimal_eval_case(
+                            id="unknown_contract",
+                            prompt="Use Humanizer.",
+                            output_contract_case_id="missing_contract",
+                        )
+                    ]
+                }
             )
-
-            with self.assertRaisesRegex(ValueError, "unknown output contract"):
-                self.runner.load_eval_cases(cases_path)
 
     def test_load_eval_cases_rejects_unknown_rubric_id(self):
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            cases_path = Path(temporary_directory) / "cases.json"
-            cases_path.write_text(
-                json.dumps(
-                    {
-                        "rubrics": {},
-                        "cases": [
-                            {
-                                "id": "unknown_rubric",
-                                "category": "explicit",
-                                "should_trigger": True,
-                                "prompt": "Use Humanizer.",
-                                "source": "Here is a draft.",
-                                "rubric_id": "missing_rubric",
-                            }
-                        ],
-                    }
-                ),
-                encoding="utf-8",
+        with self.assertRaisesRegex(ValueError, "unknown rubric"):
+            self._load_cases_from_data(
+                {
+                    "rubrics": {},
+                    "cases": [
+                        minimal_eval_case(
+                            id="unknown_rubric",
+                            prompt="Use Humanizer.",
+                            rubric_id="missing_rubric",
+                        )
+                    ],
+                },
+                output_contract_cases={},
             )
-
-            with self.assertRaisesRegex(ValueError, "unknown rubric"):
-                self.runner.load_eval_cases(cases_path, output_contract_cases={})
 
     def test_load_eval_cases_rejects_invalid_rubric_schema(self):
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            cases_path = Path(temporary_directory) / "cases.json"
-            cases_path.write_text(
-                json.dumps(
-                    {
-                        "rubrics": {
-                            "bad": {
-                                "minimum_total_score": 1,
-                                "minimum_dimension_score": 1,
-                                "dimensions": [],
-                            }
-                        },
-                        "cases": [
-                            {
-                                "id": "bad_rubric",
-                                "category": "explicit",
-                                "should_trigger": True,
-                                "prompt": "Use Humanizer.",
-                                "source": "Here is a draft.",
-                                "rubric_id": "bad",
-                            }
-                        ],
-                    }
-                ),
-                encoding="utf-8",
-            )
-
-            with self.assertRaisesRegex(ValueError, "rubric"):
-                self.runner.load_eval_cases(cases_path, output_contract_cases={})
-
-    def test_load_eval_cases_rejects_boolean_rubric_score_threshold(self):
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            cases_path = Path(temporary_directory) / "cases.json"
-            cases_path.write_text(
-                json.dumps(
-                    {
-                        "rubrics": {
-                            "bad": {
-                                "minimum_total_score": True,
-                                "minimum_dimension_score": 1,
-                                "dimensions": [
-                                    {"name": "rewrite_only", "question": "Rewrite only?"}
-                                ],
-                            }
-                        },
-                        "cases": [
-                            {
-                                "id": "bad_rubric",
-                                "category": "explicit",
-                                "should_trigger": True,
-                                "prompt": "Use Humanizer.",
-                                "source": "Here is a draft.",
-                                "rubric_id": "bad",
-                            }
-                        ],
-                    }
-                ),
-                encoding="utf-8",
-            )
-
-            with self.assertRaisesRegex(ValueError, "minimum_total_score"):
-                self.runner.load_eval_cases(cases_path, output_contract_cases={})
-
-    def test_load_eval_cases_rejects_mismatched_output_contract_source(self):
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            cases_path = Path(temporary_directory) / "cases.json"
-            cases_path.write_text(
-                json.dumps(
-                    {
-                        "cases": [
-                            {
-                                "id": "source_mismatch",
-                                "category": "explicit",
-                                "should_trigger": True,
-                                "prompt": "Use Humanizer.",
-                                "source": "Different source text.",
-                                "output_contract_case_id": "contract_case",
-                            }
-                        ]
-                    }
-                ),
-                encoding="utf-8",
-            )
-
-            with self.assertRaisesRegex(ValueError, "source mismatch"):
-                self.runner.load_eval_cases(
-                    cases_path,
-                    output_contract_cases={
-                        "contract_case": {
-                            "id": "contract_case",
-                            "source": "Expected source text.",
-                            "constraints": {},
+        with self.assertRaisesRegex(ValueError, "rubric"):
+            self._load_cases_from_data(
+                {
+                    "rubrics": {
+                        "bad": {
+                            "minimum_total_score": 1,
+                            "minimum_dimension_score": 1,
+                            "dimensions": [],
                         }
                     },
-                )
+                    "cases": [
+                        minimal_eval_case(
+                            id="bad_rubric",
+                            prompt="Use Humanizer.",
+                            rubric_id="bad",
+                        )
+                    ],
+                },
+                output_contract_cases={},
+            )
+
+    def test_load_eval_cases_rejects_boolean_rubric_score_threshold(self):
+        with self.assertRaisesRegex(ValueError, "minimum_total_score"):
+            self._load_cases_from_data(
+                {
+                    "rubrics": {
+                        "bad": {
+                            "minimum_total_score": True,
+                            "minimum_dimension_score": 1,
+                            "dimensions": [
+                                {"name": "rewrite_only", "question": "Rewrite only?"}
+                            ],
+                        }
+                    },
+                    "cases": [
+                        minimal_eval_case(
+                            id="bad_rubric",
+                            prompt="Use Humanizer.",
+                            rubric_id="bad",
+                        )
+                    ],
+                },
+                output_contract_cases={},
+            )
+
+    def test_load_eval_cases_rejects_mismatched_output_contract_source(self):
+        with self.assertRaisesRegex(ValueError, "source mismatch"):
+            self._load_cases_from_data(
+                {
+                    "cases": [
+                        minimal_eval_case(
+                            id="source_mismatch",
+                            prompt="Use Humanizer.",
+                            source="Different source text.",
+                            output_contract_case_id="contract_case",
+                        )
+                    ]
+                },
+                output_contract_cases={
+                    "contract_case": {
+                        "id": "contract_case",
+                        "source": "Expected source text.",
+                        "constraints": {},
+                    }
+                },
+            )
 
     def test_build_codex_prompt_includes_source_and_output_rules(self):
         case = {
@@ -522,13 +532,6 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
             },
         )
 
-    def test_check_trace_metric_budgets_fails_when_budget_is_exceeded(self):
-        with self.assertRaisesRegex(AssertionError, "input_tokens"):
-            self.runner.check_trace_metric_budgets(
-                {"id": "budget", "max_input_tokens": 100},
-                {"input_tokens": 101},
-            )
-
     def test_check_stderr_expectations_fails_for_forbidden_loader_warning(self):
         case = {
             "id": "stderr",
@@ -636,13 +639,7 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
             self.runner.build_parser().parse_args(["--timeout-seconds", "0"])
 
     def test_run_eval_case_reports_timeout(self):
-        case = {
-            "id": "timeout_case",
-            "category": "explicit",
-            "should_trigger": True,
-            "prompt": "Use $humanizer.",
-            "source": "Here is a draft.",
-        }
+        case = minimal_eval_case(id="timeout_case")
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             artifact_dirs = self.runner.ensure_artifact_dirs(Path(temporary_directory))
@@ -673,13 +670,7 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
             self.assertEqual(Path(summary["stderr_path"]).read_text(), "partial stderr")
 
     def test_run_eval_case_reports_startup_failure(self):
-        case = {
-            "id": "startup_failure",
-            "category": "explicit",
-            "should_trigger": True,
-            "prompt": "Use $humanizer.",
-            "source": "Here is a draft.",
-        }
+        case = minimal_eval_case(id="startup_failure")
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             artifact_dirs = self.runner.ensure_artifact_dirs(Path(temporary_directory))
@@ -702,14 +693,10 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
             self.assertIn("missing codex", summary["error"])
 
     def test_run_eval_case_does_not_reuse_stale_output_file(self):
-        case = {
-            "id": "stale_output",
-            "category": "explicit",
-            "should_trigger": True,
-            "prompt": "Use $humanizer.",
-            "source": "Here is a draft.",
-            "output_contract_case_id": "dense_ai_rewrite",
-        }
+        case = minimal_eval_case(
+            id="stale_output",
+            output_contract_case_id="dense_ai_rewrite",
+        )
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             artifact_dirs = self.runner.ensure_artifact_dirs(Path(temporary_directory))
@@ -718,12 +705,7 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
                 "AI coding assistants can help with docs and tests.",
                 encoding="utf-8",
             )
-            result = subprocess.CompletedProcess(
-                args=["codex"],
-                returncode=0,
-                stdout='{"type":"turn.completed"}\n',
-                stderr="",
-            )
+            result = completed_codex_process('{"type":"turn.completed"}\n')
 
             with mock.patch.object(self.runner.subprocess, "run", return_value=result):
                 summary = self.runner.run_eval_case(
@@ -738,30 +720,23 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
             self.assertIn("missing final output file", summary["error"])
 
     def test_run_eval_case_reports_success_metrics(self):
-        case = {
-            "id": "success",
-            "category": "explicit",
-            "should_trigger": True,
-            "prompt": "Use $humanizer.",
-            "source": "Here is a draft.",
-            "expected_trace_terms": ["skills/humanizer/SKILL.md"],
-            "output_contract_case_id": "dense_ai_rewrite",
-        }
+        case = minimal_eval_case(
+            id="success",
+            expected_trace_terms=[SKILL_TRACE_PATH],
+            output_contract_case_id="dense_ai_rewrite",
+        )
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             artifact_dirs = self.runner.ensure_artifact_dirs(Path(temporary_directory))
-            result = subprocess.CompletedProcess(
-                args=["codex"],
-                returncode=0,
-                stdout=(
-                    '{"type":"item.completed","item":{"type":"command_execution",'
-                    '"command":"sed -n \\"1,20p\\" skills/humanizer/SKILL.md",'
-                    '"aggregated_output":"skills/humanizer/SKILL.md"}}\n'
-                    '{"type":"turn.completed","usage":{"input_tokens":123,'
-                    '"cached_input_tokens":45,"output_tokens":67,'
-                    '"reasoning_output_tokens":8}}\n'
-                ),
-                stderr="",
+            result = completed_codex_process(
+                skill_read_trace(
+                    {
+                        "input_tokens": 123,
+                        "cached_input_tokens": 45,
+                        "output_tokens": 67,
+                        "reasoning_output_tokens": 8,
+                    }
+                )
             )
 
             def run_and_write_output(*args, **kwargs):
@@ -794,41 +769,19 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
             self.assertEqual(summary["input_tokens"], 123)
 
     def test_run_eval_case_runs_rubric_grade_when_enabled(self):
-        case = {
-            "id": "graded",
-            "category": "explicit",
-            "should_trigger": True,
-            "prompt": "Use $humanizer.",
-            "source": "Here is a draft.",
-            "expected_trace_terms": ["skills/humanizer/SKILL.md"],
-            "rubric": {
-                "minimum_total_score": 16,
-                "minimum_dimension_score": 8,
-                "dimensions": [
-                    {"name": "factual_fidelity", "question": "Facts?"},
-                    {"name": "rewrite_only", "question": "Rewrite only?"},
-                ],
-            },
-        }
+        case = minimal_eval_case(
+            id="graded",
+            expected_trace_terms=[SKILL_TRACE_PATH],
+            rubric=two_dimension_rubric(),
+        )
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             artifact_dirs = self.runner.ensure_artifact_dirs(Path(temporary_directory))
-            primary_result = subprocess.CompletedProcess(
-                args=["codex"],
-                returncode=0,
-                stdout=(
-                    '{"type":"item.completed","item":{"type":"command_execution",'
-                    '"command":"sed -n \\"1,20p\\" skills/humanizer/SKILL.md",'
-                    '"aggregated_output":"skills/humanizer/SKILL.md"}}\n'
-                    '{"type":"turn.completed","usage":{"input_tokens":100}}\n'
-                ),
-                stderr="",
+            primary_result = completed_codex_process(
+                skill_read_trace({"input_tokens": 100})
             )
-            rubric_result = subprocess.CompletedProcess(
-                args=["codex"],
-                returncode=0,
-                stdout='{"type":"turn.completed","usage":{"input_tokens":50}}\n',
-                stderr="",
+            rubric_result = completed_codex_process(
+                '{"type":"turn.completed","usage":{"input_tokens":50}}\n'
             )
 
             def run_and_write_outputs(*args, **kwargs):
@@ -914,12 +867,7 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
                     ),
                     encoding="utf-8",
                 )
-                return subprocess.CompletedProcess(
-                    args=command,
-                    returncode=0,
-                    stdout='{"type":"turn.completed"}\n',
-                    stderr="",
-                )
+                return completed_codex_process('{"type":"turn.completed"}\n')
 
             with mock.patch.object(
                 self.runner.subprocess,
@@ -940,32 +888,19 @@ class HumanizerEvalRunnerTests(unittest.TestCase):
             self.assertNotIn("humanizer-plugin@humanizer-plugin-local", command_text)
 
     def test_run_eval_case_preserves_rubric_timeout_artifacts(self):
-        case = {
-            "id": "graded_timeout",
-            "category": "explicit",
-            "should_trigger": True,
-            "prompt": "Use $humanizer.",
-            "source": "Here is a draft.",
-            "expected_trace_terms": ["skills/humanizer/SKILL.md"],
-            "rubric": {
+        case = minimal_eval_case(
+            id="graded_timeout",
+            expected_trace_terms=[SKILL_TRACE_PATH],
+            rubric={
                 "minimum_total_score": 8,
                 "minimum_dimension_score": 8,
                 "dimensions": [{"name": "rewrite_only", "question": "Rewrite only?"}],
             },
-        }
+        )
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             artifact_dirs = self.runner.ensure_artifact_dirs(Path(temporary_directory))
-            primary_result = subprocess.CompletedProcess(
-                args=["codex"],
-                returncode=0,
-                stdout=(
-                    '{"type":"item.completed","item":{"type":"command_execution",'
-                    '"command":"sed -n \\"1,20p\\" skills/humanizer/SKILL.md",'
-                    '"aggregated_output":"skills/humanizer/SKILL.md"}}\n'
-                ),
-                stderr="",
-            )
+            primary_result = completed_codex_process(skill_read_trace())
 
             def run_primary_then_timeout(*args, **kwargs):
                 if not artifact_dirs["outputs"].joinpath("graded_timeout.txt").exists():

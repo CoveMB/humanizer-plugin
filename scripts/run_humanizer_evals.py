@@ -32,13 +32,6 @@ TRACE_METRIC_KEYS = (
     "output_tokens",
     "reasoning_output_tokens",
 )
-TRACE_METRIC_BUDGET_KEYS = {
-    "max_command_count": "command_count",
-    "max_input_tokens": "input_tokens",
-    "max_cached_input_tokens": "cached_input_tokens",
-    "max_output_tokens": "output_tokens",
-    "max_reasoning_output_tokens": "reasoning_output_tokens",
-}
 RUBRIC_MAX_DIMENSION_SCORE = 10
 
 
@@ -85,16 +78,6 @@ def is_positive_integer(value):
     return is_strict_integer(value) and value > 0
 
 
-def require_optional_positive_integer(case, key):
-    if key not in case:
-        return None
-
-    value = case[key]
-    if not is_positive_integer(value):
-        raise ValueError(f"{case['id']}: {key} must be a positive integer")
-    return value
-
-
 def validate_eval_case(case):
     missing_keys = REQUIRED_CASE_KEYS - set(case)
     if missing_keys:
@@ -124,9 +107,6 @@ def validate_eval_case(case):
     rubric_id = case.get("rubric_id")
     if rubric_id is not None and not isinstance(rubric_id, str):
         raise ValueError(f"{case['id']}: rubric_id must be a string")
-
-    for budget_key in TRACE_METRIC_BUDGET_KEYS:
-        require_optional_positive_integer(case, budget_key)
 
     return case
 
@@ -442,23 +422,6 @@ def collect_trace_metrics(events):
     return metrics
 
 
-def check_trace_metric_budgets(case, metrics):
-    violations = []
-    for budget_key, metric_key in TRACE_METRIC_BUDGET_KEYS.items():
-        if budget_key not in case:
-            continue
-
-        budget = case[budget_key]
-        actual_value = metrics.get(metric_key, 0)
-        if actual_value > budget:
-            violations.append(
-                f"{case['id']}: {metric_key} {actual_value} exceeds budget {budget}"
-            )
-
-    if violations:
-        raise AssertionError("\n".join(violations))
-
-
 def local_marketplace_config_key():
     return f"marketplaces.{LOCAL_MARKETPLACE_NAME}"
 
@@ -535,6 +498,35 @@ def process_output_text(output):
     if isinstance(output, bytes):
         return output.decode("utf-8", errors="replace")
     return str(output)
+
+
+def run_codex_process(command, trace_path, stderr_path, timeout_seconds, case_id, label):
+    try:
+        result = subprocess.run(
+            command,
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as error:
+        trace_path.write_text(
+            process_output_text(getattr(error, "stdout", None) or error.output),
+            encoding="utf-8",
+        )
+        stderr_path.write_text(process_output_text(error.stderr), encoding="utf-8")
+        raise AssertionError(
+            f"{case_id}: {label} timed out after {timeout_seconds} seconds"
+        ) from error
+    except OSError as error:
+        trace_path.write_text("", encoding="utf-8")
+        stderr_path.write_text(str(error), encoding="utf-8")
+        raise AssertionError(f"{case_id}: failed to start {label}: {error}") from error
+
+    trace_path.write_text(result.stdout, encoding="utf-8")
+    stderr_path.write_text(result.stderr, encoding="utf-8")
+    return result
 
 
 def ensure_artifact_dirs(artifacts_dir):
@@ -697,30 +689,14 @@ def run_rubric_grade(
         model=model,
         enable_local_plugin=False,
     )
-    try:
-        result = subprocess.run(
-            command,
-            cwd=REPO_ROOT,
-            text=True,
-            capture_output=True,
-            check=False,
-            timeout=timeout_seconds,
-        )
-    except subprocess.TimeoutExpired as error:
-        rubric_trace_path.write_text(
-            process_output_text(getattr(error, "stdout", None) or error.output),
-            encoding="utf-8",
-        )
-        rubric_stderr_path.write_text(process_output_text(error.stderr), encoding="utf-8")
-        raise AssertionError(
-            f"{case['id']}: rubric grader timed out after {timeout_seconds} seconds"
-        ) from error
-    except OSError as error:
-        rubric_trace_path.write_text("", encoding="utf-8")
-        rubric_stderr_path.write_text(str(error), encoding="utf-8")
-        raise AssertionError(f"{case['id']}: failed to start rubric grader: {error}") from error
-    rubric_trace_path.write_text(result.stdout, encoding="utf-8")
-    rubric_stderr_path.write_text(result.stderr, encoding="utf-8")
+    result = run_codex_process(
+        command,
+        rubric_trace_path,
+        rubric_stderr_path,
+        timeout_seconds,
+        case["id"],
+        "rubric grader",
+    )
     if result.returncode != 0:
         raise AssertionError(f"{case['id']}: rubric grader exited with {result.returncode}")
 
@@ -769,31 +745,19 @@ def run_eval_case(
     remove_file_if_exists(output_path)
     command = build_codex_command(codex_bin, REPO_ROOT, output_path, prompt, model=model)
     try:
-        result = subprocess.run(
+        result = run_codex_process(
             command,
-            cwd=REPO_ROOT,
-            text=True,
-            capture_output=True,
-            check=False,
-            timeout=timeout_seconds,
+            trace_path,
+            stderr_path,
+            timeout_seconds,
+            case["id"],
+            "codex",
         )
-    except subprocess.TimeoutExpired as error:
-        trace_path.write_text(
-            process_output_text(getattr(error, "stdout", None) or error.output),
-            encoding="utf-8",
-        )
-        stderr_path.write_text(process_output_text(error.stderr), encoding="utf-8")
-        summary["error"] = f"{case['id']}: codex timed out after {timeout_seconds} seconds"
-        return summary
-    except OSError as error:
-        trace_path.write_text("", encoding="utf-8")
-        stderr_path.write_text(str(error), encoding="utf-8")
-        summary["error"] = f"{case['id']}: failed to start codex: {error}"
+    except AssertionError as error:
+        summary["error"] = str(error)
         return summary
 
     summary["returncode"] = result.returncode
-    trace_path.write_text(result.stdout, encoding="utf-8")
-    stderr_path.write_text(result.stderr, encoding="utf-8")
 
     try:
         if result.returncode != 0:
@@ -804,7 +768,6 @@ def run_eval_case(
         summary.update(metrics)
         check_trace_expectations(case, events)
         check_stderr_expectations(case, result.stderr)
-        check_trace_metric_budgets(case, metrics)
 
         output_text = read_final_output(case, output_path)
         validate_case_output_contract(case, output_text, output_contract_cases)

@@ -218,7 +218,7 @@ If your Codex setup uses a repository-local plugin marketplace, add an entry tha
   "name": "humanizer-plugin",
   "source": {
     "source": "local",
-    "path": "./plugins/humanizer-plugin"
+    "path": "./."
   },
   "policy": {
     "installation": "INSTALLED_BY_DEFAULT",
@@ -354,9 +354,6 @@ The adoption claim is too vague as written. "Industry observers" does not identi
 .agents/plugins/marketplace.json
 skills/humanizer/SKILL.md
 skills/humanizer/references/banned-list.md
-plugins/humanizer-plugin/.codex-plugin/plugin.json
-plugins/humanizer-plugin/skills/humanizer/SKILL.md
-plugins/humanizer-plugin/skills/humanizer/references/banned-list.md
 evals/humanizer_eval_cases.json
 scripts/run_humanizer_evals.py
 scripts/validate_humanizer_outputs.py
@@ -366,7 +363,7 @@ NOTICE
 LICENSE
 ```
 
-`skills/humanizer/SKILL.md` and `skills/humanizer/references/banned-list.md` are the source files for the bundled skill. The installable marketplace package under `plugins/humanizer-plugin/` must stay in sync with those root files.
+`skills/humanizer/SKILL.md` and `skills/humanizer/references/banned-list.md` are the source files for the bundled skill. The repository root is also the installable local marketplace package.
 
 ## Maintenance checklist
 
@@ -374,7 +371,6 @@ Before releasing a change:
 
 - Update the version in `skills/humanizer/SKILL.md`.
 - Update `.codex-plugin/plugin.json` if the plugin metadata changed.
-- Copy root plugin changes into `plugins/humanizer-plugin/` or run the tests to catch drift.
 - Keep the README pattern summary consistent with `skills/humanizer/SKILL.md`.
 - Keep `NOTICE` current when adding or changing source material.
 

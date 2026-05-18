@@ -118,6 +118,14 @@ def raise_if_violations(violations):
         raise AssertionError("\n".join(violation_list))
 
 
+def reject_unsupported_constraint_keys(case_id, constraints):
+    unsupported_keys = sorted(set(constraints) - SUPPORTED_CONSTRAINT_KEYS)
+    raise_if_violations(
+        f"{case_id}: unsupported constraint key {constraint_key!r}"
+        for constraint_key in unsupported_keys
+    )
+
+
 def require_fragments(case_id, output, fragments):
     lowered_output = output.lower()
     missing_fragments = [
@@ -326,6 +334,8 @@ def validate_case_output(case, output):
     source = case.get("source", "")
     normalized_output = normalize_text(output)
     violations = []
+
+    collect_violation(violations, reject_unsupported_constraint_keys, case_id, constraints)
 
     collect_violation(
         violations,

@@ -61,6 +61,12 @@ class OutputContractTests(unittest.TestCase):
             "atlas note adoption rose 43%. The source is unnamed, so the claim should stay general.",
         )
 
+    def test_rejects_unsupported_constraint_keys(self):
+        case = {"id": "unsupported", "constraints": {"must_includ": ["Atlas Note"]}}
+
+        with self.assertRaisesRegex(AssertionError, "unsupported constraint"):
+            validate_case_output(case, "Atlas Note adoption rose 43%.")
+
     def test_rejects_forbidden_fragment(self):
         with self.assertRaises(AssertionError):
             validate_case_output(BASE_CASE, "Atlas Note rose 43%, according to Gartner.")

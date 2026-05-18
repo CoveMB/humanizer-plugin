@@ -6,7 +6,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = REPO_ROOT / ".codex-plugin" / "plugin.json"
 MARKETPLACE_PATH = REPO_ROOT / ".agents" / "plugins" / "marketplace.json"
-MARKETPLACE_PLUGIN_PATH = REPO_ROOT / "plugins" / "humanizer-plugin"
+MARKETPLACE_PLUGIN_PATH = REPO_ROOT
 SKILL_PATH = REPO_ROOT / "skills" / "humanizer" / "SKILL.md"
 REFERENCE_PATH = REPO_ROOT / "skills" / "humanizer" / "references" / "banned-list.md"
 FIXTURE_PATH = REPO_ROOT / "tests" / "fixtures" / "humanizer_contract_cases.json"
