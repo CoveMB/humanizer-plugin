@@ -429,9 +429,20 @@ Some live cases also define rubric IDs for semantic review. Add `EVAL_ARGS='--ru
 
 For reproducibility, the runner ignores user config and project rules, points Codex at this repository as `humanizer-plugin-local`, enables `humanizer-plugin@humanizer-plugin-local`, uses ephemeral sessions, and pins the default eval model to `gpt-5.5`. Positive skill cases set `force_skill_file_read` so the trace proves the current `skills/humanizer/SKILL.md` file was used; dense catalog cases can also set `force_reference_file_read` to prove `skills/humanizer/references/banned-list.md` was loaded. The runner does not treat output-only direct `$humanizer` prompts as skill activation proof, because current `codex exec` traces do not expose a separate skill-invocation event for that path. Use `EVAL_ARGS='--model <model>'` to test another model, or `EVAL_ARGS='--timeout-seconds 600'` for slower environments.
 
+Useful eval flags:
+
+```bash
+make eval-humanizer-dry-run EVAL_ARGS='--filter explicit_dense_rewrite'
+make eval-humanizer EVAL_ARGS='--filter explicit_dense_rewrite --rubric-grade'
+make eval-humanizer EVAL_ARGS='--model gpt-5.5 --timeout-seconds 600'
+make eval-humanizer-dry-run EVAL_ARGS='--cases evals/humanizer_eval_cases.json --artifacts-dir evals/artifacts/latest --codex-bin codex'
+```
+
+Repeat `--filter` locally to run more than one focused case. Use `--cases` only when testing an alternate eval matrix, `--artifacts-dir` only when keeping artifacts separate from `evals/artifacts/latest/`, and `--codex-bin` only when testing a non-default Codex executable.
+
 ### Manual live eval workflow
 
-Normal push and pull-request CI runs only deterministic checks. The live eval is available as a separate GitHub Actions workflow named `Live Eval` and must be started manually from the Actions tab.
+Normal push and pull-request CI runs only deterministic checks. It runs the eval matrix dry-run and a representative dry-run with `--filter`, `--rubric-grade`, `--model`, `--timeout-seconds`, `--cases`, `--artifacts-dir`, and `--codex-bin` so flag wiring is covered without invoking Codex. The live eval is available as a separate GitHub Actions workflow named `Live Eval` and must be started manually from the Actions tab.
 
 To enable it:
 
@@ -448,7 +459,7 @@ The workflow installs the Codex CLI, stores auth in the temporary runner `CODEX_
 
 ## Sources and credits
 
-Humanizer 2.7.2 is derived from and inspired by these sources:
+Humanizer 2.7.3 is derived from and inspired by these sources:
 
 - [humanizer](https://github.com/blader/humanizer) by blader, based on Wikipedia's "Signs of AI writing" guide.
 - [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing), maintained by WikiProject AI Cleanup.
@@ -459,6 +470,7 @@ See `NOTICE` for attribution and license details.
 
 ## Version history
 
+- **2.7.3**: Tightened dense rewrite guidance so removed filler items are not replaced with new broad work categories such as smaller coding tasks.
 - **2.7.2**: Tightened fact preservation for scoped noun phrases and made rule-of-three cleanup drop generic filler items instead of preserving source triplets mechanically.
 - **2.7.1**: Tightened Codex skill activation metadata for padded prose and requests to make text read like a person wrote it.
 - **2.7.0**: Added the fact-safe quality gate, including stop-slop-inspired mechanical checks, scoring thresholds, and Tagore-inspired substance scoring while keeping Humanizer's factual-integrity rules.

@@ -152,7 +152,7 @@ class SkillArtifactTests(unittest.TestCase):
             r"parallel gerund triads",
             r"`writing documentation, improving tests, and keeping work aligned`",
             r"Do not replace vague source benefits with new benefit claims",
-            r"`routine code`, `rough edges`, `by hand`, `the actual problem`, or `bigger value`",
+            r"`routine code`, `smaller coding tasks`, `rough edges`, `by hand`, `the actual problem`, or `bigger value`",
         ]
         for expected_pattern in expected_patterns:
             self.assertRegex(self.skill_markdown, expected_pattern)
@@ -162,6 +162,7 @@ class SkillArtifactTests(unittest.TestCase):
             r"Do not preserve a three-item list just because the source used one",
             r"generic filler item",
             r"do not invent a third work category",
+            r"smaller coding tasks",
             r"alignment",
             r"fostering alignment",
             r"keeping teams aligned",
@@ -239,6 +240,10 @@ class SkillArtifactTests(unittest.TestCase):
         readme_markdown = read_text(REPO_ROOT / "README.md")
         self.assertIn(".codex-plugin/plugin.json", readme_markdown)
         self.assertIn("scripts/run_humanizer_evals.py", readme_markdown)
+        self.assertIn("--cases", readme_markdown)
+        self.assertIn("--artifacts-dir", readme_markdown)
+        self.assertIn("--codex-bin", readme_markdown)
+        self.assertIn("--filter", readme_markdown)
         self.assertIn("--timeout-seconds", readme_markdown)
         self.assertIn("--rubric-grade", readme_markdown)
         self.assertIn("https://github.com/CoveMB/humanizer-plugin.git", readme_markdown)
@@ -272,6 +277,15 @@ class SkillArtifactTests(unittest.TestCase):
             "git diff --check",
             "make test",
             "make eval-humanizer-dry-run",
+            "Check eval flag variations",
+            "--filter explicit_dense_rewrite",
+            "--filter contextual_docs_cleanup",
+            "--rubric-grade",
+            "--model gpt-5.5",
+            "--timeout-seconds 600",
+            "--cases evals/humanizer_eval_cases.json",
+            "--artifacts-dir /tmp/humanizer-eval-artifacts",
+            "--codex-bin codex",
         ]
         for required_command in required_commands:
             self.assertIn(required_command, workflow)
@@ -286,6 +300,11 @@ class SkillArtifactTests(unittest.TestCase):
             "codex login --with-api-key",
             "make test",
             "make eval-humanizer-dry-run",
+            "filter:",
+            "EVAL_FILTER: ${{ inputs.filter }}",
+            'eval_args+=(--filter "$EVAL_FILTER")',
+            "--model",
+            "--timeout-seconds",
             "rubric_grade:",
             "EVAL_RUBRIC_GRADE: ${{ inputs.rubric_grade }}",
             "eval_args+=(--rubric-grade)",

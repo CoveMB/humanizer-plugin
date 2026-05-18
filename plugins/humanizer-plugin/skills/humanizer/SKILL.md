@@ -1,6 +1,6 @@
 ---
 name: humanizer
-version: 2.7.2
+version: 2.7.3
 description: |
   Remove signs of AI-generated writing from text. Use when editing or reviewing
   text to make it sound more natural and human-written. Based on Wikipedia's
@@ -46,7 +46,7 @@ When given text to humanize:
 
 1. **Do not invent details.** If the source is vague, keep the rewrite vague or ask for missing facts. Never fabricate studies, people, companies, quotes, metrics, examples, timelines, prices, or citations to make the prose feel concrete.
 2. **No em dashes.** Use commas, periods, colons, semicolons, or parentheses unless the user explicitly asks to preserve them.
-3. **No forced rule-of-three lists.** Use the number of items the content naturally needs. Do not preserve a three-item list just because the source used one. If one item is a generic filler item such as alignment, synergy, productivity, creativity, or innovation, drop it or rewrite the concrete items directly. If the source only supports documentation and tests, keep only documentation and tests; do not invent a third work category. Do not rewrite `fostering alignment` as `keeping teams aligned`; cut the filler unless the source gives a concrete coordination claim. Do not output gerund triads like `writing documentation, improving tests, and helping developers keep momentum`.
+3. **No forced rule-of-three lists.** Use the number of items the content naturally needs. Do not preserve a three-item list just because the source used one. If one item is a generic filler item such as alignment, synergy, productivity, creativity, or innovation, drop it or rewrite the concrete items directly. If the source only supports documentation and tests, keep only documentation and tests; do not invent a third work category. Do not replace a removed filler item with `smaller coding tasks`, `routine code`, or another broad work category unless the source explicitly names it. Do not rewrite `fostering alignment` as `keeping teams aligned`; cut the filler unless the source gives a concrete coordination claim. Do not output gerund triads like `writing documentation, improving tests, and helping developers keep momentum`.
 4. **No contrast framing.** Avoid "It's not X, it's Y," "Not only X, but Y," "More than just X," and escalation ladders like "It's not A. It's not even B. It's C."
 5. **No `not just` phrasing.** Do not use `not just`, even without a following `but`. Rewrite the thought directly, such as `speed matters, but quality matters too`.
 6. **No dramatic staccato bursts.** Do not stack three or more short sentences for effect.
@@ -65,7 +65,7 @@ Before answering, compare the final rewrite against the source:
 - Preserve every supplied anchor noun or phrase that defines the subject, object, audience, feature, product, domain, or scope. If the source says `configuration`, `scalable workflows`, `platform`, and `cross-functional teams`, the rewrite must still include those exact terms unless the user explicitly asks for a summary.
 - Preserve adjective-noun domain phrases exactly when they define the technical meaning. Do not turn `scalable workflows` into `scaling workflows`.
 - Remove parallel gerund triads such as `writing documentation, improving tests, and keeping work aligned`. Keep one or two concrete items, split the thought, or replace the filler item with a direct sentence.
-- Do not replace vague source benefits with new benefit claims. Avoid adding examples such as `routine code`, `rough edges`, `by hand`, `the actual problem`, or `bigger value` unless the source supplied them.
+- Do not replace vague source benefits with new benefit claims. Avoid adding examples such as `routine code`, `smaller coding tasks`, `rough edges`, `by hand`, `the actual problem`, or `bigger value` unless the source supplied them.
 - Do not replace removed pitch phrases with softer pitch phrases such as `the bigger value is`, `take friction out`, `keep momentum`, or `routine writing and checking around code`.
 
 

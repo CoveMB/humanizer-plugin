@@ -194,6 +194,18 @@ class OutputContractTests(unittest.TestCase):
             "Gartner says Atlas Note adoption rose 43% last quarter.",
         )
 
+    def test_allows_question_word_before_reports_when_asking_for_missing_source(self):
+        case = {
+            "id": "missing_source_question",
+            "source": "Industry reports show that Atlas Note adoption increased by 43% last quarter.",
+            "constraints": {"no_new_named_entities": True},
+        }
+
+        validate_case_output(
+            case,
+            "Which reports support Atlas Note's 43% adoption increase last quarter?",
+        )
+
     def test_rewrite_scoped_forbidden_fragments_allow_audit_notes(self):
         case = {
             "id": "audit",

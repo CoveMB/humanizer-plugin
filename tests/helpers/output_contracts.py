@@ -48,6 +48,12 @@ REPORTING_SOURCE_PATTERN = re.compile(
     r"(?i:says|said|reports|reported|claims|claimed|notes|noted|"
     r"found|finds|argues|argued|writes|wrote)\b"
 )
+QUESTION_REPORTING_SOURCE_TERMS = {
+    "what",
+    "which",
+    "who",
+    "whose",
+}
 
 CONTRAST_FRAME_PATTERNS = (
     r"(?i)\bnot\s+only\b[^.?!]{0,120}\bbut\b",
@@ -226,7 +232,11 @@ def extract_named_entity_terms(text):
         *(match.group(0) for match in CAMEL_CASE_PATTERN.finditer(text)),
         *(match.group(0) for match in ACRONYM_PATTERN.finditer(text)),
         *(match.group(1) for match in ATTRIBUTION_SOURCE_PATTERN.finditer(text)),
-        *(match.group(1) for match in REPORTING_SOURCE_PATTERN.finditer(text)),
+        *(
+            match.group(1)
+            for match in REPORTING_SOURCE_PATTERN.finditer(text)
+            if match.group(1).lower() not in QUESTION_REPORTING_SOURCE_TERMS
+        ),
     ]
     return unique_normalized_terms(matches)
 

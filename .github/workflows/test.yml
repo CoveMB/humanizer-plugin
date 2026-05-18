@@ -36,3 +36,11 @@ jobs:
 
       - name: Check eval matrix
         run: make eval-humanizer-dry-run
+
+      - name: Check eval flag variations
+        run: >-
+          make eval-humanizer-dry-run
+          EVAL_ARGS='--filter explicit_dense_rewrite --filter contextual_docs_cleanup
+          --rubric-grade --model gpt-5.5 --timeout-seconds 600
+          --cases evals/humanizer_eval_cases.json
+          --artifacts-dir /tmp/humanizer-eval-artifacts --codex-bin codex'
