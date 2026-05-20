@@ -138,7 +138,7 @@ Clone this repository into Claude Code's skills directory:
 
 ```bash
 mkdir -p ~/.claude/skills
-git clone https://github.com/CoveMB/humanizer-plugin.git ~/.claude/skills/humanizer
+git clone https://github.com/CoveMB/humanizer-skill-plugin.git ~/.claude/skills/humanizer
 ```
 
 If you already have this repository locally, copy the skill and reference files:
@@ -155,7 +155,7 @@ Clone this repository into OpenCode's skills directory:
 
 ```bash
 mkdir -p ~/.config/opencode/skills
-git clone https://github.com/CoveMB/humanizer-plugin.git ~/.config/opencode/skills/humanizer
+git clone https://github.com/CoveMB/humanizer-skill-plugin.git ~/.config/opencode/skills/humanizer
 ```
 
 Or copy the skill and references:

@@ -7,7 +7,7 @@ open-source sources:
 1. Humanizer Plugin original code, tests, scripts, plugin metadata, and
    CoveMB-authored additions
    Author: CoveMB
-   Source: https://github.com/CoveMB/humanizer-plugin
+   Source: https://github.com/CoveMB/humanizer-skill-plugin
    License: MIT
 
 2. humanizer

@@ -6,8 +6,8 @@
     "name": "CoveMB",
     "url": "https://github.com/CoveMB"
   },
-  "homepage": "https://github.com/CoveMB/humanizer-plugin",
-  "repository": "https://github.com/CoveMB/humanizer-plugin",
+  "homepage": "https://github.com/CoveMB/humanizer-skill-plugin",
+  "repository": "https://github.com/CoveMB/humanizer-skill-plugin",
   "license": "MIT AND CC-BY-SA-4.0",
   "keywords": [
     "writing",
@@ -27,9 +27,9 @@
     "capabilities": [
       "Write"
     ],
-    "websiteURL": "https://github.com/CoveMB/humanizer-plugin",
-    "privacyPolicyURL": "https://github.com/CoveMB/humanizer-plugin/blob/main/README.md",
-    "termsOfServiceURL": "https://github.com/CoveMB/humanizer-plugin/blob/main/README.md#license",
+    "websiteURL": "https://github.com/CoveMB/humanizer-skill-plugin",
+    "privacyPolicyURL": "https://github.com/CoveMB/humanizer-skill-plugin/blob/main/README.md",
+    "termsOfServiceURL": "https://github.com/CoveMB/humanizer-skill-plugin/blob/main/README.md#license",
     "defaultPrompt": [
       "Humanize this text:",
       "Match my writing sample and rewrite this.",

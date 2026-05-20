@@ -253,7 +253,7 @@ class SkillArtifactTests(unittest.TestCase):
         self.assertIn("--filter", readme_markdown)
         self.assertIn("--timeout-seconds", readme_markdown)
         self.assertIn("--rubric-grade", readme_markdown)
-        self.assertIn("https://github.com/CoveMB/humanizer-plugin.git", readme_markdown)
+        self.assertIn("https://github.com/CoveMB/humanizer-skill-plugin.git", readme_markdown)
         self.assertNotIn("--branch humanizer-plugin", readme_markdown)
         self.assertNotIn("github.com/CoveMB/humanizer.git", readme_markdown)
         self.assertNotIn("plugins/humanizer/", readme_markdown)
