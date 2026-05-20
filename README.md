@@ -234,6 +234,8 @@ After installing or updating the plugin, reload the Codex plugin catalog from th
 
 ## Usage
 
+For prompt examples with context, see `docs/skill-examples.md`.
+
 ### Basic rewrite
 
 ```text
@@ -352,6 +354,7 @@ The adoption claim is too vague as written. "Industry observers" does not identi
 ```text
 .codex-plugin/plugin.json
 .agents/plugins/marketplace.json
+docs/skill-examples.md
 skills/humanizer/SKILL.md
 skills/humanizer/references/banned-list.md
 evals/humanizer_eval_cases.json
